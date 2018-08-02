@@ -2,8 +2,9 @@ module Tests.Basic
 
 open System.Threading.Tasks
 
-open AsyncReactive.Core
 open AsyncReactive.Types
+open AsyncReactive.Core
+open AsyncReactive.Query
 
 open NUnit.Framework
 open FsUnit
@@ -101,7 +102,7 @@ let ``Test map``() = toTask <| async {
 }
 
 [<Test>]
-let test_filter () =
+let test_query () =
     let mapper x =
         async {
             return x * 10
@@ -112,7 +113,8 @@ let test_filter () =
             return a > 10
         }
 
-    let xs = just 42 |> map mapper |> filter predicate
+    let xs = from <| seq { 1 .. 5 }
+    //let ys = query {}
 
     let obv n =
         async {
