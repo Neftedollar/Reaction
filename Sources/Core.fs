@@ -21,7 +21,7 @@ let just (x : 'a) : AsyncObservable<'a> =
         }
 
         async {
-            // Start worker on thread pool
+            // Start value generating worker on thread pool
             Async.Start (worker, cancellationSource.Token)
             return cancel
         }
@@ -42,13 +42,13 @@ let from xs : AsyncObservable<_> =
         }
 
         async {
-            // Start worker on thread pool
+            // Start value generating worker on thread pool
             Async.Start (worker, cancellationSource.Token)
             return cancel
         }
     subscribe
 
-let map (mapper : AsyncMapper<'a, 'b>) (aobs : AsyncObservable<'a>) : AsyncObservable<'b> =
+let map (amapper : AsyncMapper<'a, 'b>) (aobs : AsyncObservable<'a>) : AsyncObservable<'b> =
     let subscribe (aobv : AsyncObserver<'b>) =
         async {
             let _obv n =
@@ -56,7 +56,7 @@ let map (mapper : AsyncMapper<'a, 'b>) (aobs : AsyncObservable<'a>) : AsyncObser
                     match n with
                     | OnNext x ->
                         try
-                            let! b = mapper x
+                            let! b = amapper x
                             do! b |> OnNext |> aobv
                         with
                         | ex -> do! OnError ex |> aobv
@@ -68,14 +68,14 @@ let map (mapper : AsyncMapper<'a, 'b>) (aobs : AsyncObservable<'a>) : AsyncObser
         }
     subscribe
 
-let filter (predicate : AsyncPredicate<'a>) (aobs : AsyncObservable<'a>) : AsyncObservable<'a> =
+let filter (apredicate : AsyncPredicate<'a>) (aobs : AsyncObservable<'a>) : AsyncObservable<'a> =
     let subscribe (aobv : AsyncObserver<'a>) =
         async {
             let obv n =
                 async {
                     match n with
                     | OnNext x ->
-                        let! result = predicate x
+                        let! result = apredicate x
                         if result then
                             do! x |> OnNext |> aobv
                     | OnError str -> do! OnError str |> aobv

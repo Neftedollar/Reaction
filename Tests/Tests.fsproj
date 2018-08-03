@@ -5,7 +5,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Utils.fs" />
-    <Compile Include="UnitTest1.fs" />
+    <Compile Include="SchedulerTest.fs" />
+    <Compile Include="JustTest.fs" />
+    <Compile Include="FromTest.fs" />
+    <Compile Include="MapTest.fs" />
+    <Compile Include="FilterTest.fs" />
+    <Compile Include="QueryTest.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
