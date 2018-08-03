@@ -1,6 +1,6 @@
-# FasyncReactive
+# FAsyncReactive
 
-Async Reactive (Rx) for F#. Currenty a playground project for experimenting with functional programming and async reactive (Async Observables) in F# using simple functions instead of classes and the traditional Rx interfaces.
+FAsyncReactive is Async Reactive (Rx) for F#. Currenty a playground project for experimenting with functional programming and async reactive (Async Observables) in F# using simple functions instead of classes and the traditional Rx interfaces.
 
 ```f#
 type Notification<'a> =
