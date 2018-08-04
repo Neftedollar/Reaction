@@ -7,17 +7,35 @@ open System.Threading.Tasks
 open System.Collections.Concurrent
 open AsyncReactive.Types
 open System
+open System.Threading.Tasks
 
 type TestObserver<'a>() =
     let notifications = new List<Notification<'a>>()
+    let completed = TaskCompletionSource<'a>()
+
+    let mutable latest : 'a option = None
 
     member this.Notifications = notifications
 
-    member this.OnNext (x : Notification<'a>) =
+    member this.OnNext (n : Notification<'a>) =
         async {
-            do! Async.Sleep 1 // Make it possible to cancel
-            this.Notifications.Add(x)
+            do! Async.Sleep 1 // FIXME: Make it possible to cancel
+            this.Notifications.Add(n)
+
+            match n with
+            | OnNext x ->
+                latest <- Some x
+            | OnError e -> completed.SetException e
+            | OnCompleted ->
+                match latest with
+                | Some x -> completed.SetResult x
+                | None -> completed.SetCanceled ()
         }
+    member this.Await () : Async<'a> =
+        async {
+            return! Async.AwaitTask completed.Task
+        }
+
 exception InnerError of string
 
 type TestScheduler() =
@@ -42,7 +60,7 @@ type TestScheduler() =
             a.Invoke b
         ()
 
-    member this.Complete() =
+    member this.Complete () =
         printfn "Complete"
         queue.CompleteAdding ()
 

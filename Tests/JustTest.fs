@@ -21,12 +21,13 @@ let ``Test just happy``() = toTask <| async {
 
     // Act
     let! dispose = xs obv.OnNext
-    do! Async.Sleep(200)
 
     // Assert
+    let! latest = obv.Await ()
+    latest |> should equal 42
+
     let actual = obv.Notifications |> Seq.toList
     let expected = [ OnNext 42; OnCompleted ]
-
     Assert.That(actual, Is.EquivalentTo(expected))
 }
 
@@ -40,11 +41,8 @@ let ``Test just dispose after subscribe``() = toTask <| async {
     let! dispose = xs obv.OnNext
     do! dispose ()
 
-    do! Async.Sleep(200)
-
     // Assert
     let actual = obv.Notifications |> Seq.toList
-
     Assert.That(actual, Is.EquivalentTo([]))
 }
 
