@@ -1,11 +1,9 @@
 namespace AsyncReactive
 
-open System
-
 module Types =
     type Notification<'a> =
         | OnNext of 'a
-        | OnError of Exception
+        | OnError of exn
         | OnCompleted
 
     type AsyncDisposable = unit -> Async<unit>
@@ -14,3 +12,4 @@ module Types =
 
     type AsyncMapper<'a, 'b> = 'a -> Async<'b>
     type AsyncPredicate<'a> = 'a -> Async<bool>
+    type AsyncAccumulator<'s, 't> = 's -> 't -> Async<'s>
