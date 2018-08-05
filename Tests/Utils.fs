@@ -11,6 +11,7 @@ open AsyncReactive
 type TestObserver<'a>() =
     let notifications = new List<Notification<'a>>()
     let completed = TaskCompletionSource<'a>()
+    let monitor = new Object ()
 
     let mutable latest : 'a option = None
 
@@ -18,8 +19,13 @@ type TestObserver<'a>() =
 
     member this.OnNext (n : Notification<'a>) =
         async {
-            do! Async.Sleep 1 // FIXME: Make it possible to cancel
-            this.Notifications.Add(n)
+            printfn "TestObserver1 %A" n
+            //do! Async.Sleep 1 // FIXME: Make it possible to cancel
+
+            lock monitor (fun () ->
+                this.Notifications.Add(n)
+                printfn "TestObserver2 %A" n
+            )
 
             match n with
             | OnNext x ->
