@@ -5,7 +5,7 @@ FAsyncReactive is Async Reactive (Rx) for F#. Currenty a playground project for 
 ```f#
 type Notification<'a> =
     | OnNext of 'a
-    | OnError of Exception
+    | OnError of exn
     | OnCompleted
 
 type AsyncDisposable = unit -> Async<unit>
@@ -14,4 +14,5 @@ type AsyncObservable<'a> = AsyncObserver<'a> -> Async<AsyncDisposable>
 
 type AsyncMapper<'a, 'b> = 'a -> Async<'b>
 type AsyncPredicate<'a> = 'a -> Async<bool>
+type AsyncAccumulator<'s, 't> = 's -> 't -> Async<'s>
 ```
