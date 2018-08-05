@@ -179,13 +179,17 @@ module Core =
     let merge (aobs : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let innerSubscriptions = ResizeArray<AsyncDisposable>()
+            let mutable refCount = 1
 
             let iobv n =
                 async {
                     match n with
                     | OnNext x -> do! OnNext x |> aobv
                     | OnError e -> do! OnError e |> aobv
-                    | OnCompleted -> do! aobv OnCompleted
+                    | OnCompleted ->
+                        refCount <- refCount - 1
+                        if refCount = 0 then
+                            do! aobv OnCompleted
                 }
 
             async {
@@ -195,10 +199,24 @@ module Core =
                         | OnNext xs ->
                             let! inner = xs iobv
                             innerSubscriptions.Add(inner)
+                            refCount <- refCount + 1
 
                         | OnError e -> do! OnError e |> aobv
-                        | OnCompleted -> do! aobv OnCompleted
+                        | OnCompleted ->
+                            refCount <- refCount - 1
+                            if refCount = 0 then
+                                do! aobv OnCompleted
                     }
-                return! aobs obv
+                let! subscription = aobs obv
+                let cancel () =
+                    async {
+                        do! subscription ()
+                        for inner in innerSubscriptions do
+                            do! inner ()
+                    }
+                return cancel
             }
         subscribe
+
+    let flatMap (amapper : 'a -> Async<AsyncObservable<'b>>) (aobs : AsyncObservable<'a>) : AsyncObservable<'b> =
+        aobs |> map amapper |> merge
