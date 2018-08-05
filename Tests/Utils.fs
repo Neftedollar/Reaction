@@ -1,13 +1,12 @@
 module Tests.Utils
 
+open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Threading;
+open System.Threading.Tasks
 
-open System.Threading.Tasks
-open System.Collections.Concurrent
-open AsyncReactive.Types
-open System
-open System.Threading.Tasks
+open AsyncReactive
 
 type TestObserver<'a>() =
     let notifications = new List<Notification<'a>>()

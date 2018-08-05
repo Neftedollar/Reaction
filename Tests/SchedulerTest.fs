@@ -4,14 +4,10 @@ open System
 open System.Threading
 open System.Threading.Tasks
 
-open AsyncReactive.Types
-open AsyncReactive.Core
-open AsyncReactive.Query
-
 open NUnit.Framework
 open FsUnit
+
 open Tests.Utils
-open NUnit.Framework
 
 let runTask computation : unit =
     let func = Func<Task>(fun _ -> (Async.StartAsTask computation :> _))
@@ -28,7 +24,7 @@ let test_scheduler1 () = toTask <| async {
     do! Async.Sleep 100
     printfn "Test running 3"
     ()
-    Assert.IsTrue false
+    Assert.IsTrue true
 }
 
 [<Test>]

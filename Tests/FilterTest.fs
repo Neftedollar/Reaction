@@ -1,10 +1,9 @@
 module Tests.Basic
 
+open System
 open System.Threading.Tasks
 
-open AsyncReactive.Types
-open AsyncReactive.Core
-open AsyncReactive.Query
+open AsyncReactive
 
 open NUnit.Framework
 open FsUnit
@@ -27,10 +26,12 @@ let ``Test filter``() = toTask <| async {
 
     let! sub = xs obv.OnNext
 
-    do! Async.Sleep(100)
+    do! Async.Sleep(200)
 
     obv.Notifications |> should haveCount 2
-    Assert.That(obv.Notifications, Is.EquivalentTo([ OnNext 420; OnCompleted ]))
+    let actual = obv.Notifications |> Seq.toList
+    let expected = [ OnNext 420; OnCompleted ]
+    Assert.That(actual, Is.EquivalentTo(expected))
 }
 
 

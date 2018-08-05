@@ -2,9 +2,7 @@ module Tests.Just
 
 open System.Threading.Tasks
 
-open AsyncReactive.Types
-open AsyncReactive.Core
-open AsyncReactive.Query
+open AsyncReactive
 
 open NUnit.Framework
 open FsUnit
