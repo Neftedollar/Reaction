@@ -2,6 +2,8 @@ namespace AsyncReactive
 
 open System.Collections.Generic
 open System.Threading
+open System.Threading.Tasks
+open System
 
 [<AutoOpen>]
 module Core =
@@ -10,6 +12,14 @@ module Core =
         async {
             return ()
         }
+
+    let compositeDisposable (ds : AsyncDisposable seq) : AsyncDisposable =
+        let cancel () = async {
+            for d in ds do
+                do! d ()
+        }
+        cancel
+
 
     let canceller () =
         let cancellationSource = new CancellationTokenSource()
@@ -176,20 +186,67 @@ module Core =
 
         obv, subscribe
 
+    let singleStream () : AsyncObserver<'a> * AsyncObservable<'a> =
+        let mutable oobv : AsyncObserver<'a> option = None
+        let wait = TaskCompletionSource<unit>()
+
+        let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
+            let sobv = safeObserver aobv
+            oobv <- Some sobv
+            wait.SetResult()
+
+            async {
+                let cancel() = async {
+                    oobv <- None
+                }
+                return cancel
+            }
+
+        let obv (n : Notification<'a>) =
+            async {
+                if Option.isNone oobv then
+                    do! Async.AwaitTask wait.Task
+
+                match oobv with
+                | Some obv ->
+                    match n with
+                    | OnNext x ->
+                        try
+                            do! OnNext x |> obv
+                        with ex ->
+                            do! OnError ex |> obv
+                    | OnError e -> do! OnError e |> obv
+                    | OnCompleted -> do! obv OnCompleted
+                | None ->
+                    ()
+            }
+
+        obv, subscribe
+
     let merge (aobs : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let innerSubscriptions = ResizeArray<AsyncDisposable>()
             let mutable refCount = 1
+            let monitor = new Object()
 
             let iobv n =
                 async {
-                    match n with
-                    | OnNext x -> do! OnNext x |> aobv
-                    | OnError e -> do! OnError e |> aobv
-                    | OnCompleted ->
-                        refCount <- refCount - 1
-                        if refCount = 0 then
-                            do! aobv OnCompleted
+                    let notifier = async {
+                        match n with
+                        | OnNext x ->
+                            //printfn "OnNext %A" x
+                            do! OnNext x |> aobv
+                        | OnError e -> do! OnError e |> aobv
+                        | OnCompleted ->
+                            refCount <- refCount - 1
+                            if refCount = 0 then
+                                do! aobv OnCompleted
+                    }
+
+                    // Make sure we serialize notifications to the observer
+                    lock monitor (fun () ->
+                        Async.StartImmediate notifier
+                    )
                 }
 
             async {
