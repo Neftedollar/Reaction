@@ -13,6 +13,29 @@ open NUnit.Framework
 
 let toTask computation : Task = Async.StartAsTask computation :> _
 
+[<Test>]
+let ``test query empty`` () = toTask <| async {
+    // Arrange
+    let xs = query {
+        ()
+    }
+    let obv = TestObserver<unit>()
+
+    // Act
+    let! dispose = xs obv.OnNext
+
+    // Assert
+    try
+        let! latest = obv.Await ()
+        ()
+    with
+        | :? TaskCanceledException -> ()
+
+    let actual = obv.Notifications |> Seq.toList
+    let expected : Notification<unit> list = [ OnCompleted ]
+    Assert.That(actual, Is.EquivalentTo(expected))
+}
+
 
 [<Test>]
 let test_query () =

@@ -9,6 +9,15 @@ let disposableEmpty () =
         return ()
     }
 
+let canceller () =
+    let cancellationSource = new CancellationTokenSource()
+    let cancel() = async {
+        cancellationSource.Cancel()
+        ()
+    }
+
+    cancel, cancellationSource.Token
+
 let safeObserver(obv: AsyncObserver<'t>) =
     let mutable stopped = false
 
@@ -26,12 +35,25 @@ let safeObserver(obv: AsyncObserver<'t>) =
         }
     wrapped
 
+// An async observervable that just completes when subscribed.
+let empty () : AsyncObservable<'a> =
+    let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
+        let cancel, token = canceller ()
+        let obv = safeObserver aobv
+        let worker = async {
+            do! OnCompleted |> obv
+        }
+
+        async {
+            // Start value generating worker on thread pool
+            Async.Start (worker, token)
+            return cancel
+        }
+    subscribe
+
 let just (x : 'a) : AsyncObservable<'a> =
     let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
-        let cancellationSource = new CancellationTokenSource()
-        let cancel() = async {
-            cancellationSource.Cancel()
-        }
+        let cancel, token = canceller ()
         let obv = safeObserver aobv
         let worker = async {
             try
@@ -44,18 +66,14 @@ let just (x : 'a) : AsyncObservable<'a> =
 
         async {
             // Start value generating worker on thread pool
-            Async.Start (worker, cancellationSource.Token)
+            Async.Start (worker, token)
             return cancel
         }
     subscribe
 
 let from xs : AsyncObservable<_> =
     let subscribe (aobv : AsyncObserver<_>) : Async<AsyncDisposable> =
-        let cancellationSource = new CancellationTokenSource()
-        let cancel() = async {
-            cancellationSource.Cancel()
-        }
-
+        let cancel, token = canceller ()
         let obv = safeObserver aobv
         let worker = async {
             for x in xs do
@@ -69,7 +87,7 @@ let from xs : AsyncObservable<_> =
 
         async {
             // Start value generating worker on thread pool
-            Async.Start (worker, cancellationSource.Token)
+            Async.Start (worker, token)
             return cancel
         }
     subscribe
@@ -127,7 +145,7 @@ let scan (initial : 's) (accumulator: AsyncAccumulator<'s,'a>) (aobs : AsyncObse
         }
     subscribe
 
-let stream<'a> () : AsyncObserver<'a> * AsyncObservable<'a> =
+let stream () : AsyncObserver<'a> * AsyncObservable<'a> =
     let obvs = new List<AsyncObserver<'a>>()
 
     let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
