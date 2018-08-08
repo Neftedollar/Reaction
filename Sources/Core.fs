@@ -293,32 +293,11 @@ module Core =
             messageLoop initial
         )
 
-    // Concatenates an async observable of async observables
+    // Concatenates an async observable of async observables (WIP)
     let concat (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
-
-            let innerAgent = MailboxProcessor.Start(fun inbox ->
-                let rec messageLoop state = async {
-                    let! (ns : Notification<AsyncObservable<'a>>) = inbox.Receive()
-
-                    match ns with
-                    | OnNext obs ->
-                        let innerSubscription = obs aobv
-                        ()
-                    | OnError e -> do! OnError e |> aobv
-                    | OnCompleted ->
-                            ()
-
-                    return! messageLoop state
-                }
-
-                messageLoop (0,0)
-            )
-
             async {
-                let obv = actorObserver innerAgent
-                let! subscription = source obv
-                return subscription
+                return disposableEmpty
             }
         subscribe
 
