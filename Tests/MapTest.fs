@@ -2,14 +2,12 @@ module Tests.Map
 
 open System.Threading.Tasks
 
-open AsyncReactive.Types
-open AsyncReactive.Core
+open ReAction
 
 open NUnit.Framework
 open FsUnit
 open Tests.Utils
 open NUnit.Framework
-open System
 
 let toTask computation : Task = Async.StartAsTask computation :> _
 
@@ -21,7 +19,7 @@ let ``Test map``() = toTask <| async {
             return x * 10
         }
 
-    let xs = just 42 |> map mapper
+    let xs = just 42 |> mapAsync mapper
     let obv = TestObserver<int>()
 
     // Act
@@ -47,13 +45,16 @@ let ``Test map mapper throws exception``() = toTask <| async {
             raise error
         }
 
-    let xs = just "error" |> map mapper
+    let xs = just "error" |> mapAsync mapper
     let obv = TestObserver<unit>()
 
     // Act
-    let! sub = xs obv.OnNext
+    let! cnl = xs obv.OnNext
 
-    do! Async.Sleep(100)
+    try
+        do! obv.AwaitIgnore ()
+    with
+    | _ -> ()
 
     // Assert
     obv.Notifications |> should haveCount 1

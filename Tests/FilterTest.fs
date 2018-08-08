@@ -3,7 +3,7 @@ module Tests.Filter
 open System
 open System.Threading.Tasks
 
-open AsyncReactive
+open ReAction
 
 open NUnit.Framework
 open FsUnit
@@ -12,25 +12,56 @@ open NUnit.Framework
 
 let toTask computation : Task = Async.StartAsTask computation :> _
 
-
 [<Test>]
 let ``Test filter``() = toTask <| async {
-    let mapper x =
+    // Arrange
+    let predicate x =
         async {
-            return x * 10
+            return x < 3
         }
 
-    let xs = just 42 |> map mapper
-
+    let xs = from <| seq { 1..5 } |> filterAsync predicate
     let obv = TestObserver<int>()
 
+    // Act
+    let! sub = xs obv.OnNext
+    let! result = obv.Await ()
+
+    // Assert
+    result |> should equal 2
+    obv.Notifications |> should haveCount 3
+    let actual = obv.Notifications |> Seq.toList
+    let expected = [ OnNext 1; OnNext 2; OnCompleted ]
+    Assert.That(actual, Is.EquivalentTo(expected))
+}
+
+exception MyError of string
+
+[<Test>]
+let ``Test filter predicate throws exception``() = toTask <| async {
+    // Arrange
+    let error = MyError "error"
+    let predicate x =
+        async {
+            raise error
+            return true
+        }
+
+    let xs = from <| seq { 1..5 } |> filterAsync predicate
+    let obv = TestObserver<int>()
+
+    // Act
     let! sub = xs obv.OnNext
 
-    do! Async.Sleep(200)
+    try
+        do! obv.AwaitIgnore ()
+    with
+    | _ -> ()
 
-    obv.Notifications |> should haveCount 2
+    // Assert
+    obv.Notifications |> should haveCount 1
     let actual = obv.Notifications |> Seq.toList
-    let expected = [ OnNext 420; OnCompleted ]
+    let expected : Notification<int> list = [ OnError error ]
     Assert.That(actual, Is.EquivalentTo(expected))
 }
 

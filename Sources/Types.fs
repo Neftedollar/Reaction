@@ -1,4 +1,4 @@
-namespace AsyncReactive
+namespace ReAction
 
 type Notification<'a> =
     | OnNext of 'a
@@ -12,3 +12,17 @@ type AsyncObservable<'a> = AsyncObserver<'a> -> Async<AsyncDisposable>
 type AsyncMapper<'a, 'b> = 'a -> Async<'b>
 type AsyncPredicate<'a> = 'a -> Async<bool>
 type AsyncAccumulator<'s, 't> = 's -> 't -> Async<'s>
+type AsyncMapperIndexed<'a, 'b> = 'a -> int -> Async<'b>
+
+type Mapper<'a, 'b> = 'a -> 'b
+type MapperIndexed<'a, 'b> = 'a -> int -> 'b
+type Accumulator<'s, 't> = 's -> 't -> 's
+
+type RefCountCmd =
+    | Increase
+    | Decrease
+
+// To avoid conflict with System.Predicate
+module Re =
+    type Predicate<'a> = 'a -> bool
+

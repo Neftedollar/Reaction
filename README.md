@@ -1,6 +1,10 @@
-# FAsyncReactive
+# Re:Action
 
-FAsyncReactive is Async Reactive (Rx) for F#. Currenty a playground project for experimenting with functional programming and async reactive (Async Observables) in F# using simple functions instead of classes and the traditional Rx interfaces.
+Re:Action is lightweight Async Reactive (Rx) library for F# and [Fable](http://fable.io/) and [React](https://reactjs.org/)
+
+Currenty a playground project for experimenting with writing MVU-based web applications using async reactive functional programming (Async Observables) in F#. The project is heavely inspired by [Elm](http://elm-lang.org/) and [Elmish](https://elmish.github.io/) but currently a separate project since it does not have any dependencies to any of these projects.
+
+Re:action uses simple functions instead of classes and the traditional Rx interfaces. Some of the operators uses mailbox processors (actors) to implement the observer pipeline in order to avoid locks and mutables. This makes the code much more Fable friendly so the code can be easily transpiled to JavaScript.
 
 ```f#
 type Notification<'a> =

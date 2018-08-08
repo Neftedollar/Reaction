@@ -1,13 +1,11 @@
-namespace AsyncReactive
+namespace ReAction
 
 open System.Collections.Generic
 open System.Threading
-open System.Threading.Tasks
 open System
 
 [<AutoOpen>]
 module Core =
-
     let disposableEmpty () =
         async {
             return ()
@@ -19,7 +17,6 @@ module Core =
                 do! d ()
         }
         cancel
-
 
     let canceller () =
         let cancellationSource = new CancellationTokenSource()
@@ -50,36 +47,26 @@ module Core =
     // An async observervable that just completes when subscribed.
     let empty () : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
-            let cancel, token = canceller ()
             let obv = safeObserver aobv
-            let worker = async {
-                do! OnCompleted |> obv
-            }
 
             async {
-                // Start value generating worker on thread pool
-                Async.Start (worker, token)
-                return cancel
+                Async.Start (async {
+                    do! OnCompleted |> obv
+                })
+                return disposableEmpty
             }
         subscribe
 
-    let just (x : 'a) : AsyncObservable<'a> =
+    // An async observervable that just fails with an error when subscribed.
+    let fail (exn) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
-            let cancel, token = canceller ()
             let obv = safeObserver aobv
-            let worker = async {
-                try
-                    do! OnNext x |> obv
-                with ex ->
-                    do! OnError ex |> obv
-
-                do! OnCompleted |> obv
-            }
 
             async {
-                // Start value generating worker on thread pool
-                Async.Start (worker, token)
-                return cancel
+                Async.Start (async {
+                    do! OnError exn |> obv
+                })
+                return disposableEmpty
             }
         subscribe
 
@@ -104,41 +91,69 @@ module Core =
             }
         subscribe
 
-    let map (amapper : AsyncMapper<'a, 'b>) (aobs : AsyncObservable<_>) : AsyncObservable<_> =
+    let just (x : 'a) : AsyncObservable<'a> =
+        from [ x ]
+
+    // Create an async observable from a subscribe function. So trivial
+    // we should remove it once we get used to the idea that subscribe is
+    // exactly the same as an async observable.
+    let create (subscribe : AsyncObserver<_> -> Async<AsyncDisposable>) : AsyncObservable<_> =
+        subscribe
+
+    let mapAsync (mapper : AsyncMapper<'a,'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let subscribe (aobv : AsyncObserver<'b>) =
             async {
                 let _obv n =
                     async {
                         match n with
                         | OnNext x ->
-                            let! b = amapper x
+                            let! b =  mapper x
                             do! b |> OnNext |> aobv  // Let exceptions bubble to the top
-                        | OnError str -> do! OnError str |> aobv
+                        | OnError ex -> do! OnError ex |> aobv
                         | OnCompleted -> do! aobv OnCompleted
 
                     }
-                return! aobs _obv
+                return! source _obv
             }
         subscribe
 
-    let filter (apredicate : AsyncPredicate<'a>) (aobs : AsyncObservable<_>) : AsyncObservable<_> =
+    // The classic map (select) operator
+    let inline map (mapper : Mapper<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        mapAsync (fun x -> async { return mapper x }) source
+
+    let mapAsyncIndexed (mapper : AsyncMapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        let mutable index = 0
+        mapAsync (fun x -> async {
+                        let index' = index
+                        index <- index + 1
+                        return! mapper x index'
+                  }) source
+
+    let inline mapIndexed (mapper : MapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        mapAsyncIndexed (fun x i -> async { return mapper x i }) source
+
+    // The classic filter (where) operator
+    let filterAsync (predicate : AsyncPredicate<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             async {
                 let obv n =
                     async {
                         match n with
                         | OnNext x ->
-                            let! result = apredicate x
+                            let! result = predicate x
                             if result then
                                 do! x |> OnNext |> aobv  // Let exceptions bubble to the top
-                        | OnError str -> do! OnError str |> aobv
-                        | OnCompleted -> do! aobv OnCompleted
+                        | _ -> do! aobv n
                     }
-                return! aobs obv
+                return! source obv
             }
         subscribe
 
-    let scan (initial : 's) (accumulator: AsyncAccumulator<'s,'a>) (aobs : AsyncObservable<'a>) : AsyncObservable<'s> =
+    // The classic filter (where) operator
+    let inline filter (predicate : Re.Predicate<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+        filterAsync (fun x -> async { return predicate x }) source
+
+    let scanAsync (initial : 's) (accumulator: AsyncAccumulator<'s,'a>) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
         let subscribe (aobv : AsyncObserver<'s>) =
             let mutable state = initial
 
@@ -147,16 +162,20 @@ module Core =
                     async {
                         match n with
                         | OnNext x ->
-                            let! state' =  accumulator initial x
+                            let! state' =  accumulator state x
                             state <- state'
                             do! OnNext state |> aobv
                         | OnError e -> do! OnError e |> aobv
                         | OnCompleted -> do! aobv OnCompleted
                     }
-                return! aobs obv
+                return! source obv
             }
         subscribe
 
+    let scan (initial : 's) (accumulator: Accumulator<'s,'a>) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
+        scanAsync initial (fun s x -> async { return accumulator s x } ) source
+
+    // Hot stream that supports multiple subscribers
     let stream () : AsyncObserver<'a> * AsyncObservable<'a> =
         let obvs = new List<AsyncObserver<'a>>()
 
@@ -186,17 +205,19 @@ module Core =
 
         obv, subscribe
 
+    // Cold stream that only supports a single subscriber
     let singleStream () : AsyncObserver<'a> * AsyncObservable<'a> =
         let mutable oobv : AsyncObserver<'a> option = None
-        let wait = TaskCompletionSource<unit>()
 
         let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
             let sobv = safeObserver aobv
+            if Option.isSome oobv then
+                failwith "Already subscribed"
+
             oobv <- Some sobv
-            wait.SetResult()
 
             async {
-                let cancel() = async {
+                let cancel () = async {
                     oobv <- None
                 }
                 return cancel
@@ -204,8 +225,8 @@ module Core =
 
         let obv (n : Notification<'a>) =
             async {
-                if Option.isNone oobv then
-                    do! Async.AwaitTask wait.Task
+                while Option.isNone oobv do
+                    do! Async.Sleep 100  // Works with Fable
 
                 match oobv with
                 | Some obv ->
@@ -223,57 +244,183 @@ module Core =
 
         obv, subscribe
 
-    let merge (aobs : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) =
-            let innerSubscriptions = ResizeArray<AsyncDisposable>()
-            let mutable refCount = 1
-            let monitor = new Object()
+    // Observer that forwards notifications to a given actor
+    let actorObserver (agent : MailboxProcessor<Notification<'a>>) =
+        let obv n =
+            async {
+                agent.Post n
+            }
+        obv
 
-            let iobv n =
-                async {
-                    let notifier = async {
+    // Actor that forwards notification to a given observer
+    let observerActor obv =
+        MailboxProcessor.Start(fun inbox ->
+            let rec messageLoop stopped = async {
+                let! n = inbox.Receive()
+                let stop =
+                    match n with
+                    | OnNext n ->
+                        stopped
+                    | _ ->
+                        true
+                if not stopped then
+                    do! obv n
+
+                return! messageLoop stop
+            }
+
+            messageLoop false
+        )
+
+    let refCountActor initial action =
+        MailboxProcessor.Start(fun inbox ->
+            let rec messageLoop count = async {
+                let! cmd = inbox.Receive()
+                let newCount =
+                    match cmd with
+                    | Increase ->
+                        count + 1
+                    | Decrease ->
+                        count - 1
+
+                if newCount = 0 then
+                    do! action
+                    return ()
+
+                return! messageLoop newCount
+            }
+
+            messageLoop initial
+        )
+
+    // Concatenates an async observable of async observables
+    let concat (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+        let subscribe (aobv : AsyncObserver<'a>) =
+
+            let innerAgent = MailboxProcessor.Start(fun inbox ->
+                let rec messageLoop state = async {
+                    let! (ns : Notification<AsyncObservable<'a>>) = inbox.Receive()
+
+                    match ns with
+                    | OnNext obs ->
+                        let innerSubscription = obs aobv
+                        ()
+                    | OnError e -> do! OnError e |> aobv
+                    | OnCompleted ->
+                            ()
+
+                    return! messageLoop state
+                }
+
+                messageLoop (0,0)
+            )
+
+            async {
+                let obv = actorObserver innerAgent
+                let! subscription = source obv
+                return subscription
+            }
+        subscribe
+
+    type InnerSubscriptionCmd<'a> =
+        | NewObservable of AsyncObservable<'a>
+        | Dispose
+
+    // Merges an async observable of async observables
+    let merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+        let subscribe (aobv : AsyncObserver<'a>) =
+            let safeObserver = observerActor aobv
+            let refCount = refCountActor 1 (async {
+                safeObserver.Post OnCompleted
+            })
+
+            let innerActor =
+                let obv n =
+                    async {
                         match n with
-                        | OnNext x ->
-                            //printfn "OnNext %A" x
-                            do! OnNext x |> aobv
-                        | OnError e -> do! OnError e |> aobv
-                        | OnCompleted ->
-                            refCount <- refCount - 1
-                            if refCount = 0 then
-                                do! aobv OnCompleted
+                        | OnCompleted -> refCount.Post Decrease
+                        | _ -> safeObserver.Post n
                     }
 
-                    // Make sure we serialize notifications to the observer
-                    lock monitor (fun () ->
-                        Async.StartImmediate notifier
-                    )
-                }
+                MailboxProcessor.Start(fun inbox ->
+                    let rec messageLoop (innerSubscriptions : AsyncDisposable list) = async {
+                        let! cmd = inbox.Receive()
+                        let getInnerSubscriptions = async {
+                            match cmd with
+                            | NewObservable xs ->
+                                let! inner = xs obv
+                                return inner :: innerSubscriptions
+                            | Dispose ->
+                                for dispose in innerSubscriptions do
+                                    do! dispose ()
+                                return []
+                        }
+                        let! newInnerSubscriptions = getInnerSubscriptions
+                        return! messageLoop newInnerSubscriptions
+                    }
+
+                    messageLoop []
+                )
 
             async {
                 let obv (ns : Notification<AsyncObservable<'a>>) =
                     async {
                         match ns with
                         | OnNext xs ->
-                            let! inner = xs iobv
-                            innerSubscriptions.Add(inner)
-                            refCount <- refCount + 1
-
-                        | OnError e -> do! OnError e |> aobv
-                        | OnCompleted ->
-                            refCount <- refCount - 1
-                            if refCount = 0 then
-                                do! aobv OnCompleted
+                            refCount.Post Increase
+                            NewObservable xs |> innerActor.Post
+                        | OnError e -> OnError e |> safeObserver.Post
+                        | OnCompleted -> refCount.Post Decrease
                     }
-                let! subscription = aobs obv
+
+                let! dispose = source obv
                 let cancel () =
                     async {
-                        do! subscription ()
-                        for inner in innerSubscriptions do
-                            do! inner ()
+                        do! dispose ()
+                        innerActor.Post Dispose
                     }
                 return cancel
             }
         subscribe
 
-    let flatMap (amapper : 'a -> Async<AsyncObservable<'b>>) (aobs : AsyncObservable<'a>) : AsyncObservable<'b> =
-        aobs |> map amapper |> merge
+    // The classic flap map (selectMany, bind, mapMerge) operator
+    let flatMap (mapper : Mapper<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> map mapper |> merge
+
+    let flatMapIndexed (mapper : MapperIndexed<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> mapIndexed mapper |> merge
+
+    let flatMapAsync (mapper : AsyncMapper<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> mapAsync mapper |> merge
+
+    let flatMapAsyncIndexed (mapper : AsyncMapperIndexed<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> mapAsyncIndexed mapper |> merge
+
+    // Delays each notification with the given number of milliseconds
+    let delay (milliseconds : float) (source : AsyncObservable<_>) : AsyncObservable<'a> =
+        let subscribe (aobv : AsyncObserver<'a>) =
+            let agent = MailboxProcessor.Start(fun inbox ->
+                let rec messageLoop state = async {
+                    let! n, dueTime = inbox.Receive()
+
+                    let diff : TimeSpan = dueTime - DateTime.Now
+                    let msecs = Convert.ToInt32 diff.TotalMilliseconds
+                    if msecs > 0 then
+                        do! Async.Sleep msecs
+                    do! aobv n
+
+                    return! messageLoop state
+                }
+
+                messageLoop (0,0)
+            )
+
+            async {
+                let obv n =
+                    async {
+                        let dueTime = DateTime.Now + TimeSpan.FromMilliseconds(milliseconds)
+                        agent.Post (n, dueTime)
+                    }
+                return! source obv
+            }
+        subscribe

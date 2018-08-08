@@ -5,7 +5,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Utils.fs" />
-    <Compile Include="SchedulerTest.fs" />
     <Compile Include="JustTest.fs" />
     <Compile Include="FromTest.fs" />
     <Compile Include="MapTest.fs" />

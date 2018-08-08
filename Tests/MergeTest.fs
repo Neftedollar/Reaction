@@ -2,12 +2,14 @@ module Tests.Merge
 
 open System.Threading.Tasks
 
-open AsyncReactive
+open ReAction
 
 open NUnit.Framework
 open FsUnit
 open Tests.Utils
 open NUnit.Framework
+
+exception  MyError of string
 
 let toTask computation : Task = Async.StartAsTask computation :> _
 
@@ -52,6 +54,30 @@ let ``Test merge empty non emtpy``() = toTask <| async {
 }
 
 [<Test>]
+let ``Test merge error error``() = toTask <| async {
+    // Arrange
+    let error = MyError "error"
+    let xs = fail error
+    let ys = fail error
+    let zs = from <| [ xs; ys ] |> merge
+    let obv = TestObserver<int>()
+
+    // Act
+    let! sub = zs obv.OnNext
+
+    try
+        do! obv.Await () |> Async.Ignore
+    with
+    | _ -> ()
+
+    // Assert
+    obv.Notifications |> should haveCount 1
+    let actual = obv.Notifications |> Seq.toList
+    let expected : Notification<int> list = [ OnError error ]
+    Assert.That(actual, Is.EquivalentTo(expected))
+}
+
+[<Test>]
 let ``Test merge two``() = toTask <| async {
     // Arrange
     let xs  = from <| seq { 1..3 }
@@ -61,7 +87,7 @@ let ``Test merge two``() = toTask <| async {
 
     // Act
     let! sub = zs obv.OnNext
-    let! latest= obv.Await ()
+    do! obv.AwaitIgnore ()
 
     // Assert
     //obv.Notifications |> should haveCount 6
