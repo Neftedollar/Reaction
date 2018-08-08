@@ -397,7 +397,7 @@ module Core =
         source |> mapAsyncIndexed mapper |> merge
 
     // Delays each notification with the given number of milliseconds
-    let delay (milliseconds : float) (source : AsyncObservable<_>) : AsyncObservable<'a> =
+    let delay (milliseconds : float) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop state = async {

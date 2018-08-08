@@ -1,6 +1,6 @@
-# Re:Action
+# Re:action
 
-Re:Action is lightweight Async Reactive (Rx) library for F# and [Fable](http://fable.io/) and [React](https://reactjs.org/)
+Re:action is a lightweight Async Reactive (Rx) library for F# and [Fable](http://fable.io/) and [React](https://reactjs.org/).
 
 Currenty a playground project for experimenting with writing MVU-based web applications using async reactive functional programming (Async Observables) in F#. The project is heavely inspired by [Elm](http://elm-lang.org/) and [Elmish](https://elmish.github.io/) but currently a separate project since it does not have any dependencies to any of these projects.
 
