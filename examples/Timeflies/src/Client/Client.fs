@@ -34,24 +34,6 @@ let update (currentModel : Model) (msg : Msg) =
     | _ ->
         currentModel
 
-let safeComponents =
-    let components =
-        span [ ]
-           [
-             a [ Href "https://github.com/giraffe-fsharp/Giraffe" ] [ str "Giraffe" ]
-             str ", "
-             a [ Href "http://fable.io" ] [ str "Fable" ]
-             str ", "
-             a [ Href "https://elmish.github.io/elmish/" ] [ str "Elmish" ]
-             str ", "
-             a [ Href "https://mangelmaxime.github.io/Fulma" ] [ str "Fulma" ]
-           ]
-
-    p [ ]
-        [ strong [] [ str "SAFE Template" ]
-          str " powered by: "
-          components ]
-
 let printLetters (letters : Map<int, char * float * float>) =
     div [ Style [ FontFamily "Consolas, monospace"]] [
         for KeyValue(i, values) in letters do
@@ -64,16 +46,7 @@ let printLetters (letters : Map<int, char * float * float>) =
 let view (model : Model) =
     async {
         return div []
-            [ printLetters model.Pos
-
-              Navbar.navbar [ Navbar.Color IsPrimary ]
-                [ Navbar.Item.div [ ]
-                    [ Heading.h2 [ ]
-                        [ str "SAFE Template" ] ] ]
-
-              Footer.footer [ ]
-                    [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
-                        [ safeComponents ] ] ]
+            [ printLetters model.Pos ]
     }
 
 open Fable.Import.Browser
