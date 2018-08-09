@@ -100,6 +100,7 @@ module Core =
     let create (subscribe : AsyncObserver<_> -> Async<AsyncDisposable>) : AsyncObservable<_> =
         subscribe
 
+    // The classic map (select) operator with async mapper
     let mapAsync (mapper : AsyncMapper<'a,'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let subscribe (aobv : AsyncObserver<'b>) =
             async {
@@ -117,10 +118,11 @@ module Core =
             }
         subscribe
 
-    // The classic map (select) operator
+    // The classic map (select) operator with sync mapper
     let inline map (mapper : Mapper<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         mapAsync (fun x -> async { return mapper x }) source
 
+    // The classic map (select) operator with async and indexed mapper
     let mapAsyncIndexed (mapper : AsyncMapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let mutable index = 0
         mapAsync (fun x -> async {
@@ -129,10 +131,11 @@ module Core =
                         return! mapper x index'
                   }) source
 
+    // The classic map (select) operator with sync and indexed mapper
     let inline mapIndexed (mapper : MapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         mapAsyncIndexed (fun x i -> async { return mapper x i }) source
 
-    // The classic filter (where) operator
+    // The classic filter (where) operator with async predicate
     let filterAsync (predicate : AsyncPredicate<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             async {
@@ -149,7 +152,7 @@ module Core =
             }
         subscribe
 
-    // The classic filter (where) operator
+    // The classic filter (where) operator with sync predicate
     let inline filter (predicate : Re.Predicate<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         filterAsync (fun x -> async { return predicate x }) source
 
