@@ -2,7 +2,7 @@
 
 Re:action is a lightweight Async Reactive (Rx) Elmish-ish library for F# targetting [Fable](http://fable.io/) and [React](https://reactjs.org/).
 
-Currently a playground project for experimenting with MVU-based web applications using async reactive functional programming (Async Observables) in F#. The project is heavely inspired by [Elm](http://elm-lang.org/) and [Elmish](https://elmish.github.io/) but currently a separate project since it does not have any dependencies to any of these projects. The inspiration for Async Observables and plain old functions (POF) comes from [aioreactive](https://github.com/dbrattli/aioreactive)
+Currently a playground project for experimenting with MVU-based web applications using async reactive functional programming (Async Observables) in F#. The project is heavily inspired by [Elm](http://elm-lang.org/) and [Elmish](https://elmish.github.io/) but currently a separate project since it does not have any dependencies to any of these projects. The inspiration for Async Observables and plain old functions (POF) comes from [aioreactive](https://github.com/dbrattli/aioreactive)
 
 Re:action uses simple functions instead of classes and the traditional Rx interfaces. Some of the operators uses mailbox processors (actors) to implement the observer pipeline in order to avoid locks and mutables. This makes the code much more Fable friendly so the code can be easily transpiled to JavaScript.
 
