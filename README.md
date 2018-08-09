@@ -55,6 +55,7 @@ let view (model : Model) =
 let main = async {
     let initialModel = { Pos = Map.empty }
 
+    // Query
     let moves = from <| Seq.toList "TIME FLIES LIKE AN ARROW"
                 |> flatMapIndexed (fun x i ->
                         fromMouseMoves ()
@@ -64,6 +65,7 @@ let main = async {
                 |> scan initialModel update
                 |> map view
 
+    // React observer
     let render n =
         async {
             match n with
@@ -71,6 +73,7 @@ let main = async {
             | _ -> ()
         }
 
+    // Subscribe
     do! moves render |> Async.Ignore
 }
 
