@@ -44,45 +44,12 @@ module Core =
             }
         wrapped
 
-    // An async observervable that just completes when subscribed.
-    let empty () : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
-            let obv = safeObserver aobv
-
-            async {
-                Async.Start (async {
-                    do! OnCompleted |> obv
-                })
-                return disposableEmpty
-            }
-        subscribe
-
-    // An async observervable that just fails with an error when subscribed.
-    let fail (exn) : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
-            let obv = safeObserver aobv
-
-            async {
-                Async.Start (async {
-                    do! OnError exn |> obv
-                })
-                return disposableEmpty
-            }
-        subscribe
-
-    let from xs : AsyncObservable<_> =
+    // Create async observable from async worker function
+    let fromAsync (worker : AsyncObserver<'a> -> Async<unit>) : AsyncObservable<_> =
         let subscribe (aobv : AsyncObserver<_>) : Async<AsyncDisposable> =
             let cancel, token = canceller ()
             let obv = safeObserver aobv
-            let worker = async {
-                for x in xs do
-                    try
-                        do! OnNext x |> obv
-                    with ex ->
-                        do! OnError ex |> obv
-
-                do! OnCompleted |> obv
-            }
+            let worker = worker obv
 
             async {
                 // Start value generating worker on thread pool
@@ -90,6 +57,29 @@ module Core =
                 return cancel
             }
         subscribe
+
+    // An async observervable that just completes when subscribed.
+    let empty () : AsyncObservable<'a> =
+        fromAsync (fun obv -> async {
+            do! OnCompleted |> obv
+        })
+
+    // An async observervable that just fails with an error when subscribed.
+    let fail (exn) : AsyncObservable<'a> =
+        fromAsync (fun obv -> async {
+            do! OnError exn |> obv
+        })
+
+    let from xs : AsyncObservable<_> =
+        fromAsync (fun obv -> async {
+            for x in xs do
+                try
+                    do! OnNext x |> obv
+                with ex ->
+                    do! OnError ex |> obv
+
+            do! OnCompleted |> obv
+        })
 
     let just (x : 'a) : AsyncObservable<'a> =
         from [ x ]
