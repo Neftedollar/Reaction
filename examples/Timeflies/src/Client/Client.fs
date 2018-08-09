@@ -34,7 +34,10 @@ let update (currentModel : Model) (msg : Msg) =
     | _ ->
         currentModel
 
-let printLetters (letters : Map<int, char * float * float>) =
+
+let view (model : Model) =
+    let letters = model.Pos
+
     div [ Style [ FontFamily "Consolas, monospace"]] [
         for KeyValue(i, values) in letters do
             let c, x, y = values
@@ -42,12 +45,6 @@ let printLetters (letters : Map<int, char * float * float>) =
                 str (string c)
             ]
     ]
-
-let view (model : Model) =
-    async {
-        return div []
-            [ printLetters model.Pos ]
-    }
 
 open Fable.Import.Browser
 
@@ -92,7 +89,7 @@ let main = async {
                         |> map (fun m -> LetterMove (i, x, m.clientX + float i * 10.0 + 15.0, m.clientY))
                    )
                 |> scan initialModel update
-                |> mapAsync view
+                |> map view
 
     let render n =
         async {
