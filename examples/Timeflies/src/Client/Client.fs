@@ -39,8 +39,7 @@ let view (model : Model) =
     let letters = model.Pos
 
     div [ Style [ FontFamily "Consolas, monospace"]] [
-        for KeyValue(i, values) in letters do
-            let c, x, y = values
+        for KeyValue(i, (c, x, y)) in letters do
             yield span [ Style [Top y; Left x; Position "absolute"] ] [
                 str (string c)
             ]
