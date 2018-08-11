@@ -39,6 +39,10 @@ type Msg =
     | LetterMove of int * char * float * float
 
 // Model (state) for updating the view
+type Model = {
+    Pos: Map<int, char * float * float>
+}
+
 let update (currentModel : Model) (msg : Msg) =
     match currentModel.Pos, msg with
     | _, LetterMove (i, c, x, y) ->
