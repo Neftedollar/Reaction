@@ -70,7 +70,7 @@ module Core =
             do! OnError exn |> obv
         })
 
-    let from xs : AsyncObservable<_> =
+    let from (xs : seq<'a>) : AsyncObservable<'a> =
         fromAsync (fun obv -> async {
             for x in xs do
                 try
@@ -116,9 +116,9 @@ module Core =
     let mapAsyncIndexed (mapper : AsyncMapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let mutable index = 0
         mapAsync (fun x -> async {
-                        let index' = index
-                        index <- index + 1
-                        return! mapper x index'
+                    let index' = index
+                    index <- index + 1
+                    return! mapper x index'
                   }) source
 
     // The classic map (select) operator with sync and indexed mapper
@@ -252,10 +252,8 @@ module Core =
                 let! n = inbox.Receive()
                 let stop =
                     match n with
-                    | OnNext n ->
-                        stopped
-                    | _ ->
-                        true
+                    | OnNext n -> stopped
+                    | _ -> true
                 if not stopped then
                     do! obv n
 
@@ -271,10 +269,8 @@ module Core =
                 let! cmd = inbox.Receive()
                 let newCount =
                     match cmd with
-                    | Increase ->
-                        count + 1
-                    | Decrease ->
-                        count - 1
+                    | Increase -> count + 1
+                    | Decrease -> count - 1
 
                 if newCount = 0 then
                     do! action
@@ -334,6 +330,9 @@ module Core =
                 return cancel
             }
         subscribe
+
+    let startWith (items : seq<'a>) (source : AsyncObservable<'a>) =
+        concat [from items; source]
 
     // Merges an async observable of async observables
     let merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =

@@ -95,6 +95,26 @@ let ``Test concat two``() = toTask <| async {
 }
 
 [<Test>]
+let ``Test concat +``() = toTask <| async {
+    // Arrange
+    let xs = from <| seq { 1..3 }
+    let ys = from <| seq { 4..6 }
+    let zs = xs + ys
+    let obv = TestObserver<int>()
+
+    // Act
+    let! sub = zs obv.OnNext
+    let! result = obv.Await ()
+
+    // Assert
+    result |> should equal 6
+    obv.Notifications |> should haveCount 7
+    let actual = obv.Notifications |> Seq.toList
+    let expected = [ OnNext 1; OnNext 2; OnNext 3; OnNext 4; OnNext 5; OnNext 6; OnCompleted ]
+    Assert.That(actual, Is.EquivalentTo(expected))
+}
+
+[<Test>]
 let ``Test concat three``() = toTask <| async {
     // Arrange
     let a = from <| seq { 1..2 }
