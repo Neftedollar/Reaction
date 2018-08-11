@@ -10,6 +10,7 @@
     <Compile Include="MapTest.fs" />
     <Compile Include="FilterTest.fs" />
     <Compile Include="MergeTest.fs" />
+    <Compile Include="ConcatTest.fs" />
     <Compile Include="QueryTest.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

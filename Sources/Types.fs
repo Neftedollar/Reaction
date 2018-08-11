@@ -22,6 +22,10 @@ type RefCountCmd =
     | Increase
     | Decrease
 
+type InnerSubscriptionCmd<'a> =
+    | InnerObservable of AsyncObservable<'a>
+    | Dispose
+
 // To avoid conflict with System.Predicate
 module Re =
     type Predicate<'a> = 'a -> bool

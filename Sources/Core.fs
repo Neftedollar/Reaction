@@ -287,16 +287,53 @@ module Core =
         )
 
     // Concatenates an async observable of async observables (WIP)
-    let concat (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+    let concat (sources : seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
+            let safeObserver = observerActor aobv
+
+            let innerAgent =
+                MailboxProcessor.Start(fun inbox ->
+                    let rec messageLoop (innerSubscription : AsyncDisposable) = async {
+                        let! cmd, replyChannel = inbox.Receive()
+
+                        let obv (replyChannel : AsyncReplyChannel<bool>) n =
+                            async {
+                                match n with
+                                | OnCompleted -> replyChannel.Reply true
+                                | _ -> safeObserver.Post n
+                            }
+
+                        let getInnerSubscription = async {
+                            match cmd with
+                            | InnerObservable xs ->
+                                return! xs (obv <| replyChannel)
+                            | Dispose ->
+                                do! innerSubscription ()
+                                replyChannel.Reply true
+                                return disposableEmpty
+                        }
+
+                        do! innerSubscription ()
+                        let! newInnerSubscription = getInnerSubscription
+                        return! messageLoop newInnerSubscription
+                    }
+
+                    messageLoop disposableEmpty
+                )
+
             async {
-                return disposableEmpty
+                for source in sources do
+                    do! innerAgent.PostAndAsyncReply(fun replyChannel -> InnerObservable source, replyChannel) |> Async.Ignore
+
+                safeObserver.Post OnCompleted
+
+                let cancel () =
+                    async {
+                        do! innerAgent.PostAndAsyncReply(fun replyChannel -> Dispose, replyChannel) |> Async.Ignore
+                    }
+                return cancel
             }
         subscribe
-
-    type InnerSubscriptionCmd<'a> =
-        | NewObservable of AsyncObservable<'a>
-        | Dispose
 
     // Merges an async observable of async observables
     let merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
@@ -319,7 +356,7 @@ module Core =
                         let! cmd = inbox.Receive()
                         let getInnerSubscriptions = async {
                             match cmd with
-                            | NewObservable xs ->
+                            | InnerObservable xs ->
                                 let! inner = xs obv
                                 return inner :: innerSubscriptions
                             | Dispose ->
@@ -340,7 +377,7 @@ module Core =
                         match ns with
                         | OnNext xs ->
                             refCount.Post Increase
-                            NewObservable xs |> innerActor.Post
+                            InnerObservable xs |> innerActor.Post
                         | OnError e -> OnError e |> safeObserver.Post
                         | OnCompleted -> refCount.Post Decrease
                     }

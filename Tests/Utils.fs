@@ -18,7 +18,6 @@ type TestObserver<'a>() =
     member this.OnNext (n : Notification<'a>) =
         async {
             printfn "TestObserver %A" n
-            //do! Async.Sleep 1 // FIXME: Make it possible to cancel
 
             lock monitor (fun () ->
                 this.Notifications.Add(n)
