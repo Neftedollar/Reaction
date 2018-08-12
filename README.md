@@ -27,6 +27,10 @@ type AsyncAccumulator<'s, 't> = 's -> 't -> Async<'s>
 
 ### Operators
 
+The following parameterized async observerables (operators) are currently supported. Other operators
+may be implemented on-demand, but there are currently no plans to make this into a full featured Rx
+implementations.
+
 - map, mapIndexed, mapAsync, mapIndexedAsync
 - filter, filterAsync
 - scan, scanAsync
@@ -34,8 +38,12 @@ type AsyncAccumulator<'s, 't> = 's -> 't -> Async<'s>
 - flatMap, flatMapIndexed, flatMapAsync, flatMapIndexedAsync
 - concat
 - startWith
+- distinctUntilChanged
 - delay
 - debounce
+- combineLatest (TBD)
+- withLatestFrom (TBD)
+- switch (TBD)
 
 ## Elmish-ish example
 
