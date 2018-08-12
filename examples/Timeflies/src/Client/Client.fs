@@ -84,7 +84,7 @@ let main = async {
     let moves = from <| Seq.toList "TIME FLIES LIKE AN ARROW"
                 |> flatMapIndexed (fun x i ->
                         fromMouseMoves ()
-                        |> delay (100.0 * float i)
+                        |> delay (100 * i)
                         |> map (fun m -> LetterMove (i, x, m.clientX + float i * 10.0 + 15.0, m.clientY))
                    )
                 |> scan initialModel update

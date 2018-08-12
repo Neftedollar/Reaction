@@ -45,34 +45,34 @@ module Core =
         wrapped
 
     // Create async observable from async worker function
-    let fromAsync (worker : AsyncObserver<'a> -> Async<unit>) : AsyncObservable<_> =
+    let fromAsync (worker : AsyncObserver<'a> -> CancellationToken -> Async<unit>) : AsyncObservable<_> =
         let subscribe (aobv : AsyncObserver<_>) : Async<AsyncDisposable> =
             let cancel, token = canceller ()
             let obv = safeObserver aobv
-            let worker = worker obv
-
             async {
-                // Start value generating worker on thread pool
-                Async.Start (worker, token)
+                let! _ = Async.StartChild (worker obv token, 0)
                 return cancel
             }
         subscribe
 
     // An async observervable that just completes when subscribed.
     let empty () : AsyncObservable<'a> =
-        fromAsync (fun obv -> async {
+        fromAsync (fun obv _ -> async {
             do! OnCompleted |> obv
         })
 
     // An async observervable that just fails with an error when subscribed.
     let fail (exn) : AsyncObservable<'a> =
-        fromAsync (fun obv -> async {
+        fromAsync (fun obv _ -> async {
             do! OnError exn |> obv
         })
 
     let from (xs : seq<'a>) : AsyncObservable<'a> =
-        fromAsync (fun obv -> async {
+        fromAsync (fun obv token -> async {
             for x in xs do
+                if token.IsCancellationRequested then
+                    raise (OperationCanceledException("Operation cancelled"))
+
                 try
                     do! OnNext x |> obv
                 with ex ->
@@ -113,7 +113,7 @@ module Core =
         mapAsync (fun x -> async { return mapper x }) source
 
     // The classic map (select) operator with async and indexed mapper
-    let mapAsyncIndexed (mapper : AsyncMapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let mapIndexedAsync (mapper : AsyncMapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let mutable index = 0
         mapAsync (fun x -> async {
                     let index' = index
@@ -123,7 +123,7 @@ module Core =
 
     // The classic map (select) operator with sync and indexed mapper
     let inline mapIndexed (mapper : MapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        mapAsyncIndexed (fun x i -> async { return mapper x i }) source
+        mapIndexedAsync (fun x i -> async { return mapper x i }) source
 
     // The classic filter (where) operator with async predicate
     let filterAsync (predicate : AsyncPredicate<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
@@ -401,11 +401,11 @@ module Core =
     let flatMapAsync (mapper : AsyncMapper<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         source |> mapAsync mapper |> merge
 
-    let flatMapAsyncIndexed (mapper : AsyncMapperIndexed<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapAsyncIndexed mapper |> merge
+    let flatMapIndexedAsync (mapper : AsyncMapperIndexed<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> mapIndexedAsync mapper |> merge
 
     // Delays each notification with the given number of milliseconds
-    let delay (milliseconds : float) (source : AsyncObservable<_>) : AsyncObservable<'a> =
+    let delay (msecs : int) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop state = async {
@@ -420,15 +420,107 @@ module Core =
                     return! messageLoop state
                 }
 
-                messageLoop (0,0)
+                messageLoop (0, 0)
             )
 
             async {
                 let obv n =
                     async {
-                        let dueTime = DateTime.Now + TimeSpan.FromMilliseconds(milliseconds)
+                        let dueTime = DateTime.Now + TimeSpan.FromMilliseconds(float msecs)
                         agent.Post (n, dueTime)
                     }
                 return! source obv
+            }
+        subscribe
+
+    let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+        let subscribe (aobv : AsyncObserver<'a>) =
+            let safeObserver = observerActor aobv
+            let agent = MailboxProcessor.Start(fun inbox ->
+                let rec messageLoop (latest : Notification<'a>) = async {
+                    let! n = inbox.Receive()
+
+                    let latest' =
+                        match n with
+                        | OnNext x ->
+                            if n <> latest then
+                                try
+                                    OnNext x |> safeObserver.Post
+                                with
+                                | ex -> OnError ex |> safeObserver.Post
+                        | _ ->
+                            safeObserver.Post n
+                        n
+
+                    return! messageLoop latest'
+                }
+
+                messageLoop OnCompleted // Use as sentinel value as it will not match any OnNext value
+            )
+
+            async {
+                let obv n =
+                    async {
+                        agent.Post n
+                    }
+                return! source obv
+            }
+        subscribe
+
+    let debounce msecs (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+        let subscribe (aobv : AsyncObserver<'a>) =
+            let safeObserver = observerActor aobv
+
+            let agent = MailboxProcessor.Start(fun inbox ->
+                let rec messageLoop currentIndex = async {
+                    let! n, index = inbox.Receive()
+
+                    let newIndex =
+                        match n, index with
+                        | OnNext _, idx when idx = currentIndex ->
+                            safeObserver.Post n
+                            index
+                        | OnNext _, _ ->
+                            if index > currentIndex then
+                                index
+                            else
+                                currentIndex
+
+                        | _, _ ->
+                            printfn "%A" n
+                            safeObserver.Post n
+                            currentIndex
+
+                    return! messageLoop newIndex
+                }
+
+                messageLoop -1
+            )
+
+            async {
+                let indexer = Seq.initInfinite (fun index -> index) |> (fun x -> x.GetEnumerator ())
+
+                let obv (n : Notification<'a>) =
+                    async {
+                        indexer.MoveNext () |> ignore
+                        let index = indexer.Current
+                        agent.Post (n, index)
+
+                        let worker = async {
+                            do! Async.Sleep msecs
+                            agent.Post (n, index)
+                        }
+
+                        let! _ = Async.StartChild worker
+                        ()
+                    }
+                let! dispose = source obv
+
+                let cancel () =
+                    async {
+                        do! dispose ()
+                        agent.Post (OnCompleted, 0)
+                    }
+                return cancel
             }
         subscribe

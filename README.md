@@ -6,7 +6,7 @@ Currently a playground project for experimenting with MVU-based web applications
 
 ## Async Observables
 
-The difference between an "Async Observable" and an "Observable" is that with "Async Observables" you need to await operations such as subscribe, OnNext, OnError, OnCompleted. Also mappers may be async. This means create operations may do async operations i.e setup network connections, and observers may do async operations such as writing to disk.
+The difference between an "Async Observable" and an "Observable" is that with "Async Observables" you need to await operations such as subscribe, OnNext, OnError, OnCompleted. This means subscribe (create) may do async operations i.e setup network connections, and observers may do async operations such as writing to disk (observers are about side-effects right?).
 
 Re:action uses simple functions instead of classes and the traditional Rx interfaces. Some of the operators uses mailbox processors (actors) to implement the observer pipeline in order to avoid locks and mutables. This makes the code more Fable friendly for easily transpiling to JavaScript. Here are the core types:
 
@@ -24,6 +24,18 @@ type AsyncMapper<'a, 'b> = 'a -> Async<'b>
 type AsyncPredicate<'a> = 'a -> Async<bool>
 type AsyncAccumulator<'s, 't> = 's -> 't -> Async<'s>
 ```
+
+### Operators
+
+- map, mapIndexed, mapAsync, mapIndexedAsync
+- filter, filterAsync
+- scan, scanAsync
+- merge
+- flatMap, flatMapIndexed, flatMapAsync, flatMapIndexedAsync
+- concat
+- startWith
+- delay
+- debounce
 
 ## Elmish-ish example
 
