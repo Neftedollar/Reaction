@@ -49,6 +49,7 @@ module Core =
         let subscribe (aobv : AsyncObserver<_>) : Async<AsyncDisposable> =
             let cancel, token = canceller ()
             let obv = safeObserver aobv
+
             async {
                 let! _ = Async.StartChild (worker obv token, 0)
                 return cancel
@@ -112,13 +113,15 @@ module Core =
     let inline map (mapper : Mapper<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         mapAsync (fun x -> async { return mapper x }) source
 
-    // The classic map (select) operator with async and indexed mapper
+    // The classic map (select) operator with an indexed and async mapper
     let mapIndexedAsync (mapper : AsyncMapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        let mutable index = 0
+        let infinite = Seq.initInfinite (fun index -> index)
+        let indexer = infinite |> (fun x -> x.GetEnumerator ())
+
         mapAsync (fun x -> async {
-                    let index' = index
-                    index <- index + 1
-                    return! mapper x index'
+                    indexer.MoveNext () |> ignore
+                    let index = indexer.Current
+                    return! mapper x index
                   }) source
 
     // The classic map (select) operator with sync and indexed mapper
@@ -470,6 +473,7 @@ module Core =
     let debounce msecs (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = observerActor aobv
+            let infinite = Seq.initInfinite (fun index -> index)
 
             let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop currentIndex = async {
@@ -498,7 +502,7 @@ module Core =
             )
 
             async {
-                let indexer = Seq.initInfinite (fun index -> index) |> (fun x -> x.GetEnumerator ())
+                let indexer = infinite |> (fun x -> x.GetEnumerator ())
 
                 let obv (n : Notification<'a>) =
                     async {
