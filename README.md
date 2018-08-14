@@ -6,7 +6,7 @@ Currently a playground project for experimenting with MVU-based web applications
 
 ## Async Observables
 
-The difference between an "Async Observable" and an "Observable" is that with "Async Observables" you need to await operations such as subscribe, OnNext, OnError, OnCompleted. This means subscribe (create) may do async operations i.e setup network connections, and observers may do async operations such as writing to disk (observers are about side-effects right?).
+The difference between an "Async Observable" and an "Observable" is that with "Async Observables" you need to await operations such as subscribe, OnNext, OnError, OnCompleted. This enables subscribe in create type operators to do async operations i.e setup network connections, and observers may finally do async operations such as writing to disk (observers are all about side-effects right?).
 
 Re:action uses simple functions instead of classes and the traditional Rx interfaces. Some of the operators uses mailbox processors (actors) to implement the observer pipeline in order to avoid locks and mutables. This makes the code more Fable friendly for easily transpiling to JavaScript. Here are the core types:
 
@@ -27,9 +27,9 @@ type AsyncAccumulator<'s, 't> = 's -> 't -> Async<'s>
 
 ### Operators
 
-The following parameterized async observerables (operators) are currently supported. Other operators
-may be implemented on-demand, but there are currently no plans to make this into a full featured Rx
-implementations.
+The following parameterized async observerable returning functions (operators) are
+currently supported. Other operators may be implemented on-demand, but there are
+currently no plans to make this into a full featured Rx implementation.
 
 - map, mapIndexed, mapAsync, mapIndexedAsync
 - filter, filterAsync
@@ -75,8 +75,7 @@ let view (model : Model) =
     let letters = model.Pos
 
     div [ Style [ FontFamily "Consolas, monospace"]] [
-        for KeyValue(i, values) in letters do
-            let c, x, y = values
+        for KeyValue(i, (c, x, y)) in letters do
             yield span [ Style [Top y; Left x; Position "absolute"] ] [
                 str (string c)
             ]
