@@ -491,7 +491,6 @@ module Core =
                                 currentIndex
 
                         | _, _ ->
-                            printfn "%A" n
                             safeObserver.Post n
                             currentIndex
 
@@ -526,5 +525,52 @@ module Core =
                         agent.Post (OnCompleted, 0)
                     }
                 return cancel
+            }
+        subscribe
+
+    type Notifications<'a, 'b> =
+    | Source of Notification<'a>
+    | Other of Notification<'b>
+
+    let combineLatest (other : AsyncObservable<'b>) (mapper : 'a -> 'b -> 'c) (source : AsyncObservable<'a>) : AsyncObservable<'c> =
+        let subscribe (aobv : AsyncObserver<'c>) =
+            let safeObserver = observerActor aobv
+
+            let agent = MailboxProcessor.Start(fun inbox ->
+                let rec messageLoop (source : option<'a>) (other : option<'b>) = async {
+                    let! cn = inbox.Receive()
+
+                    let onNextOption n  =
+                        match n with
+                        | OnNext x ->
+                            Some x
+                        | OnError ex ->
+                            OnError ex |> safeObserver.Post
+                            None
+                        | OnCompleted ->
+                            OnCompleted |> safeObserver.Post
+                            None
+
+                    let source', other' =
+                        match cn with
+                        | Source n -> onNextOption n, other
+                        | Other n ->source, onNextOption n
+
+                    let c = source' |> Option.bind (fun a -> other' |> Option.map  (fun b -> mapper a b))
+                    match c with
+                    | Some x -> OnNext x |> safeObserver.Post
+                    | _ -> ()
+
+                    return! messageLoop source' other'
+                }
+
+                messageLoop None None
+            )
+
+            async {
+                let! dispose1 = source (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
+                let! dispose2 = other (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
+
+                return compositeDisposable [ dispose1; dispose2 ]
             }
         subscribe
