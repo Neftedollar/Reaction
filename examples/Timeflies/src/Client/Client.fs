@@ -15,14 +15,14 @@ open Fable
 // we mark it as optional, because initially it will not be available from the client
 // the initial value will be requested from server
 type Model = {
-    Pos: Map<int, char * float * float>
+    Pos: Map<int, string * float * float>
 }
 
 // The Msg type defines what events/actions can occur while the application is running
 // the state of the application changes *only* in reaction to these events
 type Msg =
     | MouseEvent of MouseEvent
-    | LetterMove of int * char * float * float
+    | LetterMove of int * string * float * float
 
 // The update function computes the next state of the application based on the current state and the incoming events/messages
 // It can also run side-effects (encoded as commands) like calling the server via Http.
@@ -41,7 +41,7 @@ let view (model : Model) =
     div [ Style [ FontFamily "Consolas, monospace"]] [
         for KeyValue(i, (c, x, y)) in letters do
             yield span [ Style [Top y; Left x; Position "absolute"] ] [
-                str (string c)
+                str c
             ]
     ]
 
@@ -61,27 +61,10 @@ let renderReact placeholderId view =
             document.getElementById(placeholderId)
         )))
 
-let fromMouseMoves () : AsyncObservable<MouseEvent> =
-    let subscribe (obv : AsyncObserver<MouseEvent>) : Async<AsyncDisposable> =
-        async {
-            let onMouseMove (ev : Fable.Import.Browser.MouseEvent) =
-                async {
-                    do! ev |> OnNext |> obv
-                } |> Async.StartImmediate
-
-            window.addEventListener_mousemove onMouseMove
-            let cancel () = async {
-                window.removeEventListener ("mousemove", unbox onMouseMove)
-            }
-            return cancel
-        }
-
-    subscribe
-
 let main = async {
     let initialModel = { Pos = Map.empty }
 
-    let moves = from <| Seq.toList "TIME FLIES LIKE AN ARROW"
+    let moves = Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
                 |> flatMapIndexed (fun x i ->
                         fromMouseMoves ()
                         |> delay (100 * i)
