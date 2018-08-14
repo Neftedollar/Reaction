@@ -116,7 +116,7 @@ module Core =
     // The classic map (select) operator with an indexed and async mapper
     let mapIndexedAsync (mapper : AsyncMapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let infinite = Seq.initInfinite (fun index -> index)
-        let indexer = infinite |> (fun x -> x.GetEnumerator ())
+        let indexer = infinite.GetEnumerator ()
 
         mapAsync (fun x -> async {
                     indexer.MoveNext () |> ignore
@@ -502,7 +502,7 @@ module Core =
             )
 
             async {
-                let indexer = infinite |> (fun x -> x.GetEnumerator ())
+                let indexer = infinite.GetEnumerator ()
 
                 let obv (n : Notification<'a>) =
                     async {
