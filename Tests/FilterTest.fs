@@ -24,7 +24,7 @@ let ``Test filter``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNext
+    let! sub = xs obv.OnNotification
     let! result = obv.Await ()
 
     // Assert
@@ -51,7 +51,7 @@ let ``Test filter predicate throws exception``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNext
+    let! sub = xs obv.OnNotification
 
     try
         do! obv.AwaitIgnore ()

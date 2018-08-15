@@ -22,7 +22,7 @@ let ``Test merge non empty emtpy``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNext
+    let! sub = zs obv.OnNotification
     let! latest= obv.Await ()
 
     // Assert
@@ -42,7 +42,7 @@ let ``Test merge empty non emtpy``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNext
+    let! sub = zs obv.OnNotification
     let! latest= obv.Await ()
 
     // Assert
@@ -63,7 +63,7 @@ let ``Test merge error error``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNext
+    let! sub = zs obv.OnNotification
 
     try
         do! obv.Await () |> Async.Ignore
@@ -86,7 +86,7 @@ let ``Test merge two``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNext
+    let! sub = zs obv.OnNotification
     do! obv.AwaitIgnore ()
 
     // Assert

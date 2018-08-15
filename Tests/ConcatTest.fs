@@ -21,7 +21,7 @@ let ``Test concat emtpy empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNext
+    let! sub = zs obv.OnNotification
     try
         do! obv.AwaitIgnore ()
     with
@@ -43,7 +43,7 @@ let ``Test concat non emtpy empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNext
+    let! sub = zs obv.OnNotification
     let! result = obv.Await ()
 
     // Assert
@@ -63,7 +63,7 @@ let ``Test concat empty non empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNext
+    let! sub = zs obv.OnNotification
     let! result = obv.Await ()
 
     // Assert
@@ -83,7 +83,7 @@ let ``Test concat two``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNext
+    let! sub = zs obv.OnNotification
     let! result = obv.Await ()
 
     // Assert
@@ -103,7 +103,7 @@ let ``Test concat +``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNext
+    let! sub = zs obv.OnNotification
     let! result = obv.Await ()
 
     // Assert
@@ -124,7 +124,7 @@ let ``Test concat three``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNext
+    let! sub = xs obv.OnNotification
     let! result = obv.Await ()
 
     // Assert
@@ -132,5 +132,31 @@ let ``Test concat three``() = toTask <| async {
     obv.Notifications |> should haveCount 7
     let actual = obv.Notifications |> Seq.toList
     let expected = [ OnNext 1; OnNext 2; OnNext 3; OnNext 4; OnNext 5; OnNext 6; OnCompleted ]
+    Assert.That(actual, Is.EquivalentTo(expected))
+}
+
+exception MyError of string
+
+[<Test>]
+let ``Test concat fail with non emtpy ``() = toTask <| async {
+    // Arrange
+    let error = MyError "error"
+    let xs = fail error
+    let ys = from <| seq { 1..3 }
+    let zs = concat [ xs; ys ]
+    let obv = TestObserver<int>()
+
+    // Act
+    let! sub = zs obv.OnNotification
+    try
+        do! obv.AwaitIgnore ()
+    with
+    | _ -> ()
+
+    // Assert
+    //result |> should equal 3
+    obv.Notifications |> should haveCount 1
+    let actual = obv.Notifications |> Seq.toList
+    let expected : Notification<int> list = [ OnError error ]
     Assert.That(actual, Is.EquivalentTo(expected))
 }

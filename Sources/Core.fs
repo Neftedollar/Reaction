@@ -27,24 +27,41 @@ module Core =
 
         cancel, cancellationSource.Token
 
-    let safeObserver(obv: AsyncObserver<'t>) =
-        let stopped = seq [ false; true ] |> fun x -> x.GetEnumerator()
-        stopped.MoveNext () |> ignore
 
-        let wrapped (n : Notification<'t>)  =
-            async {
-                printfn "stopped %A" stopped
-                if not stopped.Current then
+    /// Safe observer that wraps the given observer and makes sure that
+    /// the Rx grammar (onNext* (onError|onCompleted)?) is not violated.
+    let safeObserver (obv : AsyncObserver<'a>) =
+        let agent = MailboxProcessor.Start(fun inbox ->
+            let rec messageLoop stopped = async {
+                let! n = inbox.Receive()
+
+                if stopped then
+                    return! messageLoop stopped
+
+                let! stop = async {
                     match n with
-                    | OnNext x -> do! OnNext x |> obv
-                    | OnError err ->
-                        stopped.MoveNext () |> ignore
-                        do! OnError err |> obv
-                    | OnCompleted ->
-                        stopped.MoveNext () |> ignore
-                        do! obv OnCompleted
+                    | OnNext x ->
+                        try
+                            do! OnNext x |> obv
+                            return false
+                        with
+                        | ex ->
+                            do! OnError ex |> obv
+                            return true
+                    | _ ->
+                        do! obv n
+                        return true
+                }
+
+                return! messageLoop stop
             }
-        wrapped
+
+            messageLoop false
+        )
+        let safeObv (n : Notification<'a>) = async {
+            agent.Post n
+        }
+        safeObv
 
     // Create async observable from async worker function
     let fromAsync (worker : AsyncObserver<'a> -> CancellationToken -> Async<unit>) : AsyncObservable<_> =
@@ -250,24 +267,6 @@ module Core =
             }
         obv
 
-    // Actor that forwards notification to a given observer
-    let observerActor obv =
-        MailboxProcessor.Start(fun inbox ->
-            let rec messageLoop stopped = async {
-                let! n = inbox.Receive()
-                let stop =
-                    match n with
-                    | OnNext n -> stopped
-                    | _ -> true
-                if not stopped then
-                    do! obv n
-
-                return! messageLoop stop
-            }
-
-            messageLoop false
-        )
-
     let refCountActor initial action =
         MailboxProcessor.Start(fun inbox ->
             let rec messageLoop count = async {
@@ -290,7 +289,7 @@ module Core =
     // Concatenates an async observable of async observables (WIP)
     let concat (sources : seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
-            let safeObserver = observerActor aobv
+            let safeObserver = safeObserver aobv
 
             let innerAgent =
                 MailboxProcessor.Start(fun inbox ->
@@ -300,8 +299,11 @@ module Core =
                         let obv (replyChannel : AsyncReplyChannel<bool>) n =
                             async {
                                 match n with
+                                | OnNext x -> do! OnNext x |> safeObserver
+                                | OnError err ->
+                                    do! OnError err |> safeObserver
+                                    replyChannel.Reply false
                                 | OnCompleted -> replyChannel.Reply true
-                                | _ -> safeObserver.Post n
                             }
 
                         let getInnerSubscription = async {
@@ -326,7 +328,7 @@ module Core =
                 for source in sources do
                     do! innerAgent.PostAndAsyncReply(fun replyChannel -> InnerObservable source, replyChannel) |> Async.Ignore
 
-                safeObserver.Post OnCompleted
+                do! safeObserver OnCompleted
 
                 let cancel () =
                     async {
@@ -342,9 +344,9 @@ module Core =
     // Merges an async observable of async observables
     let merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
-            let safeObserver = observerActor aobv
+            let safeObserver = safeObserver aobv
             let refCount = refCountActor 1 (async {
-                safeObserver.Post OnCompleted
+                do! safeObserver OnCompleted
             })
 
             let innerActor =
@@ -352,7 +354,7 @@ module Core =
                     async {
                         match n with
                         | OnCompleted -> refCount.Post Decrease
-                        | _ -> safeObserver.Post n
+                        | _ -> do! safeObserver n
                     }
 
                 MailboxProcessor.Start(fun inbox ->
@@ -382,7 +384,7 @@ module Core =
                         | OnNext xs ->
                             refCount.Post Increase
                             InnerObservable xs |> innerActor.Post
-                        | OnError e -> OnError e |> safeObserver.Post
+                        | OnError e -> do! OnError e |> safeObserver
                         | OnCompleted -> refCount.Post Decrease
                     }
 
@@ -440,22 +442,23 @@ module Core =
 
     let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
-            let safeObserver = observerActor aobv
+            let safeObserver = safeObserver aobv
             let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop (latest : Notification<'a>) = async {
                     let! n = inbox.Receive()
 
-                    let latest' =
+                    let! latest' = async {
                         match n with
                         | OnNext x ->
                             if n <> latest then
                                 try
-                                    OnNext x |> safeObserver.Post
+                                    do! OnNext x |> safeObserver
                                 with
-                                | ex -> OnError ex |> safeObserver.Post
+                                | ex -> do! OnError ex |> safeObserver
                         | _ ->
-                            safeObserver.Post n
-                        n
+                            do! safeObserver n
+                        return n
+                    }
 
                     return! messageLoop latest'
                 }
@@ -474,28 +477,28 @@ module Core =
 
     let debounce msecs (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
-            let safeObserver = observerActor aobv
+            let safeObserver = safeObserver aobv
             let infinite = Seq.initInfinite (fun index -> index)
 
             let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop currentIndex = async {
-                    let! n, index = inbox.Receive()
+                    let! n, index = inbox.Receive ()
 
-                    let newIndex =
+                    let! newIndex = async {
                         match n, index with
                         | OnNext _, idx when idx = currentIndex ->
-                            safeObserver.Post n
-                            index
+                            do! safeObserver n
+                            return index
                         | OnNext _, _ ->
                             if index > currentIndex then
-                                index
+                                return index
                             else
-                                currentIndex
+                                return currentIndex
 
                         | _, _ ->
-                            safeObserver.Post n
-                            currentIndex
-
+                            do! safeObserver n
+                            return currentIndex
+                    }
                     return! messageLoop newIndex
                 }
 
@@ -536,31 +539,37 @@ module Core =
 
     let combineLatest (other : AsyncObservable<'b>) (mapper : 'a -> 'b -> 'c) (source : AsyncObservable<'a>) : AsyncObservable<'c> =
         let subscribe (aobv : AsyncObserver<'c>) =
-            let safeObserver = observerActor aobv
+            let safeObserver = safeObserver aobv
 
             let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop (source : option<'a>) (other : option<'b>) = async {
                     let! cn = inbox.Receive()
 
-                    let onNextOption n  =
-                        match n with
-                        | OnNext x ->
-                            Some x
-                        | OnError ex ->
-                            OnError ex |> safeObserver.Post
-                            None
-                        | OnCompleted ->
-                            OnCompleted |> safeObserver.Post
-                            None
+                    let onNextOption n =
+                        async {
+                            match n with
+                            | OnNext x ->
+                                return Some x
+                            | OnError ex ->
+                                do! OnError ex |> safeObserver
+                                return None
+                            | OnCompleted ->
+                                do! OnCompleted |> safeObserver
+                                return None
+                        }
 
-                    let source', other' =
+                    let! source', other' = async {
                         match cn with
-                        | Source n -> onNextOption n, other
-                        | Other n ->source, onNextOption n
-
+                        | Source n ->
+                            let! onNextOptionN = onNextOption n
+                            return onNextOptionN, other
+                        | Other n ->
+                            let! onNextOptionN = onNextOption n
+                            return source, onNextOptionN
+                    }
                     let c = source' |> Option.bind (fun a -> other' |> Option.map  (fun b -> mapper a b))
                     match c with
-                    | Some x -> OnNext x |> safeObserver.Post
+                    | Some x -> do! OnNext x |> safeObserver
                     | _ -> ()
 
                     return! messageLoop source' other'

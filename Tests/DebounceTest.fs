@@ -20,7 +20,7 @@ let ``Test debounce single value``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNext
+    let! sub = xs obv.OnNotification
     do! OnNext 42 |> dispatch
     do! Async.Sleep 150
     do! OnCompleted |> dispatch
@@ -43,7 +43,7 @@ let ``Test debounce two immediate values``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNext
+    let! sub = xs obv.OnNotification
     do! OnNext 42 |> dispatch
     do! OnNext 43 |> dispatch
     do! Async.Sleep 150
@@ -67,7 +67,7 @@ let ``Test debounce two separate values``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNext
+    let! sub = xs obv.OnNotification
     do! OnNext 42 |> dispatch
     do! Async.Sleep 150
     do! OnNext 43 |> dispatch
