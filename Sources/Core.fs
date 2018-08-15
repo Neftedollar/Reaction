@@ -28,18 +28,20 @@ module Core =
         cancel, cancellationSource.Token
 
     let safeObserver(obv: AsyncObserver<'t>) =
-        let mutable stopped = false
+        let stopped = seq [ false; true ] |> fun x -> x.GetEnumerator()
+        stopped.MoveNext () |> ignore
 
-        let wrapped (x : Notification<'t>)  =
+        let wrapped (n : Notification<'t>)  =
             async {
-                if not stopped then
-                    match x with
-                    | OnNext n -> do! OnNext n |> obv
-                    | OnError e ->
-                        stopped <- true
-                        do! OnError e |> obv
+                printfn "stopped %A" stopped
+                if not stopped.Current then
+                    match n with
+                    | OnNext x -> do! OnNext x |> obv
+                    | OnError err ->
+                        stopped.MoveNext () |> ignore
+                        do! OnError err |> obv
                     | OnCompleted ->
-                        stopped <- true
+                        stopped.MoveNext () |> ignore
                         do! obv OnCompleted
             }
         wrapped
