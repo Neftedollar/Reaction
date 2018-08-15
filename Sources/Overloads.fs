@@ -5,10 +5,10 @@ namespace ReAction
 module Overloads =
     type AsyncObservablePlus = AsyncObservablePlus with
         // Concatenate two AsyncObservable streams
-        static member inline (?<-) (AsyncObservablePlus, x:AsyncObservable<'a>, y:AsyncObservable<'a>) = concat [x; y]
+        static member (?<-) (AsyncObservablePlus, x:AsyncObservable<'a>, y:AsyncObservable<'a>) = concat [x; y]
         // Start AsyncObservable with given sequence
-        static member inline (?<-) (AsyncObservablePlus, x:seq<'a>, y:AsyncObservable<'a>) = startWith x y
+        static member (?<-) (AsyncObservablePlus, x:seq<'a>, y:AsyncObservable<'a>) = startWith x y
         // Make sure (+) still works for normal types
-        static member inline (?<-) (AsyncObservablePlus, x, y) = x + y
+        static member (?<-) (AsyncObservablePlus, x, y) = x + y
 
     let inline (+) v1 v2 = (?<-) AsyncObservablePlus v1 v2
