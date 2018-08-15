@@ -41,7 +41,7 @@ currently no plans to make this into a full featured Rx implementation.
 - distinctUntilChanged
 - delay
 - debounce
-- combineLatest (TBD)
+- combineLatest
 - withLatestFrom (TBD)
 - switch (TBD)
 
