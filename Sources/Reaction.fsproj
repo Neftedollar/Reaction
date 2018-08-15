@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Reaction</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Dag Brattli</Authors>
+    <Company>Dag Labs</Company>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,6 +14,9 @@
     <Compile Include="Overloads.fs" />
     <Compile Include="Query.fs" />
     <Compile Include="Fable.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="*.fsproj; *.fs" PackagePath="fable\" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
