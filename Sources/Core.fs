@@ -27,7 +27,6 @@ module Core =
 
         cancel, cancellationSource.Token
 
-
     /// Safe observer that wraps the given observer and makes sure that
     /// the Rx grammar (onNext* (onError|onCompleted)?) is not violated.
     let safeObserver (obv : AsyncObserver<'a>) =
@@ -76,13 +75,13 @@ module Core =
         subscribe
 
     // An async observervable that just completes when subscribed.
-    let empty () : AsyncObservable<'a> =
+    let inline empty () : AsyncObservable<'a> =
         fromAsync (fun obv _ -> async {
             do! OnCompleted |> obv
         })
 
     // An async observervable that just fails with an error when subscribed.
-    let fail (exn) : AsyncObservable<'a> =
+    let inline fail (exn) : AsyncObservable<'a> =
         fromAsync (fun obv _ -> async {
             do! OnError exn |> obv
         })
@@ -101,7 +100,7 @@ module Core =
             do! OnCompleted |> obv
         })
 
-    let just (x : 'a) : AsyncObservable<'a> =
+    let inline just (x : 'a) : AsyncObservable<'a> =
         from [ x ]
 
     // Create an async observable from a subscribe function. So trivial
@@ -258,14 +257,6 @@ module Core =
             }
 
         obv, subscribe
-
-    // Observer that forwards notifications to a given actor
-    let actorObserver (agent : MailboxProcessor<Notification<'a>>) =
-        let obv n =
-            async {
-                agent.Post n
-            }
-        obv
 
     let refCountActor initial action =
         MailboxProcessor.Start(fun inbox ->
