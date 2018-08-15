@@ -7,7 +7,6 @@ open ReAction
 open NUnit.Framework
 open FsUnit
 open Tests.Utils
-open NUnit.Framework
 
 exception  MyError of string
 

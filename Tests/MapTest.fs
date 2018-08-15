@@ -7,7 +7,6 @@ open ReAction
 open NUnit.Framework
 open FsUnit
 open Tests.Utils
-open NUnit.Framework
 
 let toTask computation : Task = Async.StartAsTask computation :> _
 
