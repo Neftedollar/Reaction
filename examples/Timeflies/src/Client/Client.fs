@@ -5,24 +5,22 @@ open Fable.Helpers.React.Props
 
 open ReAction
 
-open Fulma
 open Fable.Import.React
 open Fable
-
 
 // The model holds data that you want to keep track of while the application is running
 // in this case, we are keeping track of a counter
 // we mark it as optional, because initially it will not be available from the client
 // the initial value will be requested from server
 type Model = {
-    Pos: Map<int, string * float * float>
+    Pos: Map<int, string * int * int>
 }
 
 // The Msg type defines what events/actions can occur while the application is running
 // the state of the application changes *only* in reaction to these events
 type Msg =
     | MouseEvent of MouseEvent
-    | LetterMove of int * string * float * float
+    | LetterMove of int * string * int * int
 
 // The update function computes the next state of the application based on the current state and the incoming events/messages
 // It can also run side-effects (encoded as commands) like calling the server via Http.
@@ -37,10 +35,11 @@ let update (currentModel : Model) (msg : Msg) =
 
 let view (model : Model) =
     let letters = model.Pos
+    let offset x i = x + i * 10 + 15
 
     div [ Style [ FontFamily "Consolas, monospace"]] [
         for KeyValue(i, (c, x, y)) in letters do
-            yield span [ Style [Top y; Left x; Position "absolute"] ] [
+            yield span [ Style [Top y; Left (offset x i); Position "absolute"] ] [
                 str c
             ]
     ]
@@ -68,7 +67,8 @@ let main = async {
                 |> flatMapIndexed (fun x i ->
                         fromMouseMoves ()
                         |> delay (100 * i)
-                        |> map (fun m -> LetterMove (i, x, m.clientX + float i * 10.0 + 15.0, m.clientY))
+                        |> map (fun m ->
+                            LetterMove (i, x, int m.clientX, int m.clientY))
                    )
                 |> scan initialModel update
                 |> map view
