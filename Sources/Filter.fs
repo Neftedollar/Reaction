@@ -12,12 +12,12 @@ module Filter =
                         | OnNext x ->
                             let! result = predicate x
                             if result then
-                                do! x |> OnNext |> aobv  // Let exceptions bubble to the top
-                        | _ -> do! aobv n
+                                do! aobv.OnNext x  // Let exceptions bubble to the top
+                        | _ -> do! aobv.Call n
                     }
-                return! source obv
+                return! source.Subscribe obv
             }
-        subscribe
+        AsyncObservable subscribe
 
     // The classic filter (where) operator with sync predicate
     let inline filter (predicate : Re.Predicate<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
@@ -35,11 +35,10 @@ module Filter =
                         | OnNext x ->
                             if n <> latest then
                                 try
-                                    do! OnNext x |> safeObserver
+                                    do! safeObserver.OnNext x
                                 with
-                                | ex -> do! OnError ex |> safeObserver
-                        | _ ->
-                            do! safeObserver n
+                                | ex -> do! safeObserver.OnError ex
+                        | _ -> do! safeObserver.Call n
                         return n
                     }
 
@@ -54,7 +53,7 @@ module Filter =
                     async {
                         agent.Post n
                     }
-                return! source obv
+                return! source.Subscribe obv
             }
-        subscribe
+        AsyncObservable subscribe
 

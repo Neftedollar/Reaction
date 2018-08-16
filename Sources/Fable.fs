@@ -21,17 +21,17 @@ module Fable =
             async {
                 let onMouseMove (ev : Fable.Import.Browser.MouseEvent) =
                     async {
-                        do! ev |> OnNext |> obv
+                        do! obv.OnNext ev
                     } |> Async.StartImmediate
 
                 window.addEventListener_mousemove onMouseMove
                 let cancel () = async {
                     window.removeEventListener ("mousemove", unbox onMouseMove)
                 }
-                return cancel
+                return AsyncDisposable cancel
             }
 
-        subscribe
+        AsyncObservable subscribe
 
     /// Setup rendering of root React component inside html element identified by placeholderId
     let renderReact placeholderId view =

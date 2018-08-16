@@ -4,17 +4,15 @@ open System.Threading
 
 [<AutoOpen>]
 module Core =
-    let disposableEmpty () =
-        async {
-            return ()
-        }
+    let disposableEmpty : AsyncDisposable =
+        AsyncDisposable (fun () -> async { return () })
 
     let compositeDisposable (ds : AsyncDisposable seq) : AsyncDisposable =
         let cancel () = async {
             for d in ds do
-                do! d ()
+                do! d.Dispose ()
         }
-        cancel
+        AsyncDisposable cancel
 
     let canceller () =
         let cancellationSource = new CancellationTokenSource()
@@ -39,14 +37,14 @@ module Core =
                     match n with
                     | OnNext x ->
                         try
-                            do! OnNext x |> obv
+                            do! obv.OnNext x
                             return false
                         with
                         | ex ->
-                            do! OnError ex |> obv
+                            do! obv.OnError ex
                             return true
                     | _ ->
-                        do! obv n
+                        do! obv.Call n
                         return true
                 }
 
@@ -58,7 +56,7 @@ module Core =
         let safeObv (n : Notification<'a>) = async {
             agent.Post n
         }
-        safeObv
+        AsyncObserver safeObv
 
     let refCountActor initial action =
         MailboxProcessor.Start(fun inbox ->

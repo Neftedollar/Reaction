@@ -64,7 +64,7 @@ let main = async {
             | _ -> ()
         }
 
-    do! moves render |> Async.Ignore
+    do! moves.Subscribe render |> Async.Ignore
 }
 
 main |> Async.StartImmediate

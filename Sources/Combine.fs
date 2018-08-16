@@ -15,9 +15,9 @@ module Combine =
                         let obv (replyChannel : AsyncReplyChannel<bool>) n =
                             async {
                                 match n with
-                                | OnNext x -> do! OnNext x |> safeObserver
+                                | OnNext x -> do! safeObserver.OnNext x
                                 | OnError err ->
-                                    do! OnError err |> safeObserver
+                                    do! safeObserver.OnError err
                                     replyChannel.Reply false
                                 | OnCompleted -> replyChannel.Reply true
                             }
@@ -25,14 +25,14 @@ module Combine =
                         let getInnerSubscription = async {
                             match cmd with
                             | InnerObservable xs ->
-                                return! xs (obv <| replyChannel)
+                                return! xs.Subscribe (obv replyChannel)
                             | Dispose ->
-                                do! innerSubscription ()
+                                do! innerSubscription.Dispose ()
                                 replyChannel.Reply true
                                 return disposableEmpty
                         }
 
-                        do! innerSubscription ()
+                        do! innerSubscription.Dispose ()
                         let! newInnerSubscription = getInnerSubscription
                         return! messageLoop newInnerSubscription
                     }
@@ -44,15 +44,15 @@ module Combine =
                 for source in sources do
                     do! innerAgent.PostAndAsyncReply(fun replyChannel -> InnerObservable source, replyChannel) |> Async.Ignore
 
-                do! safeObserver OnCompleted
+                do! safeObserver.OnCompleted ()
 
                 let cancel () =
                     async {
                         do! innerAgent.PostAndAsyncReply(fun replyChannel -> Dispose, replyChannel) |> Async.Ignore
                     }
-                return cancel
+                return AsyncDisposable cancel
             }
-        subscribe
+        AsyncObservable subscribe
 
     let startWith (items : seq<'a>) (source : AsyncObservable<'a>) =
         concat [from items; source]
@@ -62,7 +62,7 @@ module Combine =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let refCount = refCountActor 1 (async {
-                do! safeObserver OnCompleted
+                do! safeObserver.OnCompleted ()
             })
 
             let innerActor =
@@ -70,7 +70,7 @@ module Combine =
                     async {
                         match n with
                         | OnCompleted -> refCount.Post Decrease
-                        | _ -> do! safeObserver n
+                        | _ -> do! safeObserver.Call n
                     }
 
                 MailboxProcessor.Start(fun inbox ->
@@ -79,11 +79,11 @@ module Combine =
                         let getInnerSubscriptions = async {
                             match cmd with
                             | InnerObservable xs ->
-                                let! inner = xs obv
+                                let! inner = xs.Subscribe obv
                                 return inner :: innerSubscriptions
                             | Dispose ->
                                 for dispose in innerSubscriptions do
-                                    do! dispose ()
+                                    do! dispose.Dispose ()
                                 return []
                         }
                         let! newInnerSubscriptions = getInnerSubscriptions
@@ -100,19 +100,19 @@ module Combine =
                         | OnNext xs ->
                             refCount.Post Increase
                             InnerObservable xs |> innerActor.Post
-                        | OnError e -> do! OnError e |> safeObserver
+                        | OnError e -> do! safeObserver.OnError e
                         | OnCompleted -> refCount.Post Decrease
                     }
 
-                let! dispose = source obv
+                let! dispose = source.Subscribe obv
                 let cancel () =
                     async {
-                        do! dispose ()
+                        do! dispose.Dispose ()
                         innerActor.Post Dispose
                     }
-                return cancel
+                return AsyncDisposable cancel
             }
-        subscribe
+        AsyncObservable subscribe
 
     type Notifications<'a, 'b> =
     | Source of Notification<'a>
@@ -132,10 +132,10 @@ module Combine =
                             | OnNext x ->
                                 return Some x
                             | OnError ex ->
-                                do! OnError ex |> safeObserver
+                                do! safeObserver.OnError ex
                                 return None
                             | OnCompleted ->
-                                do! OnCompleted |> safeObserver
+                                do! safeObserver.OnCompleted ()
                                 return None
                         }
 
@@ -150,7 +150,7 @@ module Combine =
                     }
                     let c = source' |> Option.bind (fun a -> other' |> Option.map  (fun b -> mapper a b))
                     match c with
-                    | Some x -> do! OnNext x |> safeObserver
+                    | Some x -> do! safeObserver.OnNext x
                     | _ -> ()
 
                     return! messageLoop source' other'
@@ -160,12 +160,12 @@ module Combine =
             )
 
             async {
-                let! dispose1 = source (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
-                let! dispose2 = other (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
+                let! dispose1 = source.Subscribe (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
+                let! dispose2 = other.Subscribe (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
 
                 return compositeDisposable [ dispose1; dispose2 ]
             }
-        subscribe
+        AsyncObservable subscribe
 
     let withLatestFrom (other : AsyncObservable<'b>) (mapper : 'a -> 'b -> 'c) (source : AsyncObservable<'a>) : AsyncObservable<'c> =
         let subscribe (aobv : AsyncObserver<'c>) =
@@ -181,10 +181,10 @@ module Combine =
                             | OnNext x ->
                                 return Some x
                             | OnError ex ->
-                                do! OnError ex |> safeObserver
+                                do! safeObserver.OnError ex
                                 return None
                             | OnCompleted ->
-                                do! OnCompleted |> safeObserver
+                                do! safeObserver.OnCompleted ()
                                 return None
                         }
 
@@ -199,7 +199,7 @@ module Combine =
                     }
                     let c = source' |> Option.bind (fun a -> latest' |> Option.map  (fun b -> mapper a b))
                     match c with
-                    | Some x -> do! OnNext x |> safeObserver
+                    | Some x -> do! safeObserver.OnNext x
                     | _ -> ()
 
                     return! messageLoop latest'
@@ -209,9 +209,9 @@ module Combine =
             )
 
             async {
-                let! dispose1 = source (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
-                let! dispose2 = other (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
+                let! dispose1 = source.Subscribe (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
+                let! dispose2 = other.Subscribe (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
 
                 return compositeDisposable [ dispose1; dispose2 ]
             }
-        subscribe
+        AsyncObservable subscribe

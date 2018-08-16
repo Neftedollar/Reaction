@@ -6,7 +6,7 @@ open System.Threading.Tasks
 
 open ReAction
 
-type TestObserver<'a>() =
+type TestObserver<'a> () =
     let notifications = new List<Notification<'a>>()
     let completed = TaskCompletionSource<'a>()
     let monitor = new Object ()
@@ -15,8 +15,8 @@ type TestObserver<'a>() =
 
     member this.Notifications = notifications
 
-    member this.OnNotification (n : Notification<'a>) =
-        async {
+    member this.Callable =
+        let obv (n : Notification<'a>) = async {
             printfn "TestObserver %A" n
 
             lock monitor (fun () ->
@@ -31,6 +31,8 @@ type TestObserver<'a>() =
                 | Some x -> completed.SetResult x
                 | None -> completed.SetCanceled ()
         }
+        AsyncObserver obv
+
     member this.Await () : Async<'a> =
         async {
             return! Async.AwaitTask completed.Task
@@ -51,8 +53,8 @@ let fromNotification (notifications : seq<Notification<'a>>) =
                 raise (OperationCanceledException("Operation cancelled"))
 
             try
-                do! notification |> obv
+                do! obv.Call notification
             with ex ->
-                do! OnError ex |> obv
+                do! obv.OnError ex
     })
 

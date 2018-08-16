@@ -16,7 +16,7 @@ module Streams =
                 let cancel() = async {
                     obvs.Remove(sobv)|> ignore
                 }
-                return cancel
+                return AsyncDisposable cancel
             }
 
         let obv (n : Notification<'a>) =
@@ -25,14 +25,14 @@ module Streams =
                     match n with
                     | OnNext x ->
                         try
-                            do! OnNext x |> aobv
+                            do! aobv.OnNext x
                         with ex ->
-                            do! OnError ex |> aobv
-                    | OnError e -> do! OnError e |> aobv
-                    | OnCompleted -> do! aobv OnCompleted
+                            do! aobv.OnError ex
+                    | OnError e -> do! aobv.OnError e
+                    | OnCompleted -> do! aobv.OnCompleted ()
             }
 
-        obv, subscribe
+        AsyncObserver obv, AsyncObservable subscribe
 
     // Cold stream that only supports a single subscriber
     let singleStream () : AsyncObserver<'a> * AsyncObservable<'a> =
@@ -49,7 +49,7 @@ module Streams =
                 let cancel () = async {
                     oobv <- None
                 }
-                return cancel
+                return AsyncDisposable cancel
             }
 
         let obv (n : Notification<'a>) =
@@ -62,13 +62,13 @@ module Streams =
                     match n with
                     | OnNext x ->
                         try
-                            do! OnNext x |> obv
+                            do! obv.OnNext x
                         with ex ->
-                            do! OnError ex |> obv
-                    | OnError e -> do! OnError e |> obv
-                    | OnCompleted -> do! obv OnCompleted
+                            do! obv.OnError ex
+                    | OnError e -> do! obv.OnError e
+                    | OnCompleted -> do! obv.OnCompleted ()
                 | None ->
                     ()
             }
 
-        obv, subscribe
+        AsyncObserver obv, AsyncObservable subscribe

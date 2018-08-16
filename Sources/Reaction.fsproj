@@ -18,9 +18,9 @@
     <Compile Include="Combine.fs" />
     <Compile Include="Transform.fs" />
     <Compile Include="Timeshift.fs" />
-    <Compile Include="Overloads.fs" />
     <Compile Include="Query.fs" />
     <Compile Include="Fable.fs" />
+    <Compile Include="Overloads.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs" PackagePath="fable\" />

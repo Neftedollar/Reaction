@@ -22,7 +22,7 @@ let ``Test map``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNotification
+    let! sub = xs.Subscribe obv.Callable
     let! latest= obv.Await ()
 
     // Assert
@@ -48,7 +48,7 @@ let ``Test map mapper throws exception``() = toTask <| async {
     let obv = TestObserver<unit>()
 
     // Act
-    let! cnl = xs obv.OnNotification
+    let! sub = xs.Subscribe obv.Callable
 
     try
         do! obv.AwaitIgnore ()

@@ -13,20 +13,20 @@ module Creation =
 
             async {
                 let! _ = Async.StartChild (worker obv token, 0)
-                return cancel
+                return AsyncDisposable cancel
             }
-        subscribe
+        AsyncObservable subscribe
 
     // An async observervable that just completes when subscribed.
     let inline empty () : AsyncObservable<'a> =
         fromAsync (fun obv _ -> async {
-            do! OnCompleted |> obv
+            do! obv.OnCompleted ()
         })
 
     // An async observervable that just fails with an error when subscribed.
     let inline fail (exn) : AsyncObservable<'a> =
         fromAsync (fun obv _ -> async {
-            do! OnError exn |> obv
+            do! obv.OnError exn
         })
 
     let from (xs : seq<'a>) : AsyncObservable<'a> =
@@ -36,11 +36,11 @@ module Creation =
                     raise (OperationCanceledException("Operation cancelled"))
 
                 try
-                    do! OnNext x |> obv
+                    do! obv.OnNext x
                 with ex ->
-                    do! OnError ex |> obv
+                    do! obv.OnError ex
 
-            do! OnCompleted |> obv
+            do! obv.OnCompleted ()
         })
 
     let inline just (x : 'a) : AsyncObservable<'a> =
@@ -50,4 +50,4 @@ module Creation =
     // we should remove it once we get used to the idea that subscribe is
     // exactly the same as an async observable.
     let create (subscribe : AsyncObserver<_> -> Async<AsyncDisposable>) : AsyncObservable<_> =
-        subscribe
+        AsyncObservable subscribe

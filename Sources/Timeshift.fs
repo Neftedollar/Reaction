@@ -15,7 +15,7 @@ module Time =
                     let msecs = Convert.ToInt32 diff.TotalMilliseconds
                     if msecs > 0 then
                         do! Async.Sleep msecs
-                    do! aobv n
+                    do! aobv.Call n
 
                     return! messageLoop state
                 }
@@ -29,9 +29,9 @@ module Time =
                         let dueTime = DateTime.Now + TimeSpan.FromMilliseconds(float msecs)
                         agent.Post (n, dueTime)
                     }
-                return! source obv
+                return! source.Subscribe obv
             }
-        subscribe
+        AsyncObservable subscribe
 
     let debounce msecs (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
@@ -45,7 +45,7 @@ module Time =
                     let! newIndex = async {
                         match n, index with
                         | OnNext _, idx when idx = currentIndex ->
-                            do! safeObserver n
+                            do! safeObserver.Call n
                             return index
                         | OnNext _, _ ->
                             if index > currentIndex then
@@ -54,7 +54,7 @@ module Time =
                                 return currentIndex
 
                         | _, _ ->
-                            do! safeObserver n
+                            do! safeObserver.Call n
                             return currentIndex
                     }
                     return! messageLoop newIndex
@@ -80,13 +80,13 @@ module Time =
                         let! _ = Async.StartChild worker
                         ()
                     }
-                let! dispose = source obv
+                let! dispose = source.Subscribe obv
 
                 let cancel () =
                     async {
-                        do! dispose ()
+                        do! dispose.Dispose ()
                         agent.Post (OnCompleted, 0)
                     }
-                return cancel
+                return AsyncDisposable cancel
             }
-        subscribe
+        AsyncObservable subscribe

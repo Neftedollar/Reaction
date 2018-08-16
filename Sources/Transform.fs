@@ -6,19 +6,19 @@ module Transform =
     let mapAsync (mapper : AsyncMapper<'a,'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let subscribe (aobv : AsyncObserver<'b>) =
             async {
-                let _obv n =
+                let obv' n =
                     async {
                         match n with
                         | OnNext x ->
                             let! b =  mapper x
-                            do! b |> OnNext |> aobv  // Let exceptions bubble to the top
-                        | OnError ex -> do! OnError ex |> aobv
-                        | OnCompleted -> do! aobv OnCompleted
+                            do! aobv.OnNext b  // Let exceptions bubble to the top
+                        | OnError ex -> do! aobv.OnError ex
+                        | OnCompleted -> do! aobv.OnCompleted ()
 
                     }
-                return! source _obv
+                return! source.Subscribe obv'
             }
-        subscribe
+        AsyncObservable subscribe
 
     // The classic map (select) operator with sync mapper
     let inline map (mapper : Mapper<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
@@ -56,7 +56,7 @@ module Transform =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let refCount = refCountActor 1 (async {
-                do! safeObserver OnCompleted
+                do! safeObserver.OnCompleted ()
             })
 
             let innerActor =
@@ -64,7 +64,7 @@ module Transform =
                     async {
                         match n with
                         | OnCompleted -> refCount.Post Decrease
-                        | _ -> do! safeObserver n
+                        | _ -> do! safeObserver.Call n
                     }
 
                 MailboxProcessor.Start(fun inbox ->
@@ -73,10 +73,10 @@ module Transform =
                         let getCurrent = async {
                             match cmd with
                             | InnerObservable xs ->
-                                let! inner = xs obv
+                                let! inner = xs.Subscribe obv
                                 return inner
                             | Dispose ->
-                                do! current ()
+                                do! current.Dispose ()
                                 return disposableEmpty
                         }
                         let! current' = getCurrent
@@ -93,19 +93,19 @@ module Transform =
                         | OnNext xs ->
                             refCount.Post Increase
                             InnerObservable xs |> innerActor.Post
-                        | OnError e -> do! OnError e |> safeObserver
+                        | OnError e -> do! safeObserver.OnError e
                         | OnCompleted -> refCount.Post Decrease
                     }
 
-                let! dispose = source obv
+                let! dispose = source.Subscribe obv
                 let cancel () =
                     async {
-                        do! dispose ()
+                        do! dispose.Dispose ()
                         innerActor.Post Dispose
                     }
-                return cancel
+                return AsyncDisposable cancel
             }
-        subscribe
+        AsyncObservable subscribe
 
     let flatMapLatest (mapper : Mapper<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         source |> map mapper |> switchLatest

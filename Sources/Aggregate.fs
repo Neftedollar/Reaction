@@ -13,13 +13,13 @@ module Aggregate =
                         | OnNext x ->
                             let! state' =  accumulator state x
                             state <- state'
-                            do! OnNext state |> aobv
-                        | OnError e -> do! OnError e |> aobv
-                        | OnCompleted -> do! aobv OnCompleted
+                            do! aobv.OnNext state
+                        | OnError e -> do! aobv.OnError e
+                        | OnCompleted -> do! aobv.OnCompleted ()
                     }
-                return! source obv
+                return! source.Subscribe obv
             }
-        subscribe
+        AsyncObservable subscribe
 
     let scan (initial : 's) (accumulator: Accumulator<'s,'a>) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
         scanAsync initial (fun s x -> async { return accumulator s x } ) source

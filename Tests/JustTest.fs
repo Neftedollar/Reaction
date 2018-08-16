@@ -17,7 +17,7 @@ let ``Test just happy``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs obv.OnNotification
+    let! subscription = xs.Subscribe obv.Callable
 
     // Assert
     let! latest = obv.Await ()
@@ -35,8 +35,8 @@ let ``Test just dispose after subscribe``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs obv.OnNotification
-    Async.StartImmediate (dispose ())
+    let! subscription = xs.Subscribe obv.Callable
+    Async.StartImmediate (subscription.Dispose ())
 
     // Assert
     //let actual = obv.Notifications |> Seq.toList
