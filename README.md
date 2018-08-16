@@ -42,8 +42,8 @@ currently no plans to make this into a full featured Rx implementation.
 - delay
 - debounce
 - combineLatest
-- withLatestFrom (TBD)
-- switch (TBD)
+- withLatestFrom
+- switchLatest
 
 ## Elmish-ish example
 

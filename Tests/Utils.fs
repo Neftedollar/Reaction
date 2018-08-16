@@ -55,3 +55,4 @@ let fromNotification (notifications : seq<Notification<'a>>) =
             with ex ->
                 do! OnError ex |> obv
     })
+

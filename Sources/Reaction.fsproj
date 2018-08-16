@@ -11,6 +11,13 @@
   <ItemGroup>
     <Compile Include="Types.fs" />
     <Compile Include="Core.fs" />
+    <Compile Include="Stream.fs" />
+    <Compile Include="Create.fs" />
+    <Compile Include="Filter.fs" />
+    <Compile Include="Aggregate.fs" />
+    <Compile Include="Combine.fs" />
+    <Compile Include="Transform.fs" />
+    <Compile Include="Timeshift.fs" />
     <Compile Include="Overloads.fs" />
     <Compile Include="Query.fs" />
     <Compile Include="Fable.fs" />

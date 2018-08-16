@@ -91,7 +91,7 @@ let ``Test concat two``() = toTask <| async {
     let expected = [ OnNext 1; OnNext 2; OnNext 3; OnNext 4; OnNext 5; OnNext 6; OnCompleted ]
     Assert.That(actual, Is.EquivalentTo(expected))
 }
-
+(*
 [<Test>]
 let ``Test concat +``() = toTask <| async {
     // Arrange
@@ -111,7 +111,7 @@ let ``Test concat +``() = toTask <| async {
     let expected = [ OnNext 1; OnNext 2; OnNext 3; OnNext 4; OnNext 5; OnNext 6; OnCompleted ]
     Assert.That(actual, Is.EquivalentTo(expected))
 }
-
+*)
 [<Test>]
 let ``Test concat three``() = toTask <| async {
     // Arrange
