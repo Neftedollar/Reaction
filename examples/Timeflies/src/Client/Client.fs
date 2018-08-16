@@ -32,38 +32,22 @@ let update (currentModel : Model) (msg : Msg) =
     | _ ->
         currentModel
 
-
 let view (model : Model) =
     let letters = model.Pos
-    let offset x i = x + i * 10 + 15
+    let offsetX x i = x + i * 10 + 15
 
     div [ Style [ FontFamily "Consolas, monospace"]] [
         for KeyValue(i, (c, x, y)) in letters do
-            yield span [ Style [Top y; Left (offset x i); Position "absolute"] ] [
+            yield span [ Style [Top y; Left (offsetX x i); Position "absolute"] ] [
                 str c
             ]
     ]
 
-open Fable.Import.Browser
-
-/// Setup rendering of root React component inside html element identified by placeholderId
-let renderReact placeholderId view =
-
-    let mutable lastRequest = None
-    match lastRequest with
-    | Some r -> window.cancelAnimationFrame r
-    | _ -> ()
-
-    lastRequest <- Some (window.requestAnimationFrame (fun _ ->
-        Fable.Import.ReactDom.render(
-            view,
-            document.getElementById(placeholderId)
-        )))
-
 let main = async {
     let initialModel = { Pos = Map.empty }
 
-    let moves = Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
+    let moves =
+        Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
                 |> flatMapIndexed (fun x i ->
                         fromMouseMoves ()
                         |> delay (100 * i)
@@ -84,4 +68,3 @@ let main = async {
 }
 
 main |> Async.StartImmediate
-
