@@ -50,14 +50,14 @@ let main = async {
 
     let moves =
         Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
-            >>= fun (x, i) -> async {
+            >>= (fun (x, i) -> async {
                     return fromMouseMoves ()
-                    |> delay (100 * i)
-                    |> map (fun (m, _) -> async {
-                        printfn "%A" (i, x, m.clientX, m.clientY)
-                        return LetterMove (i, x, int m.clientX, int m.clientY)
-                    })
-                }
+                        |> map (fun (m, _) -> async {
+                            return LetterMove (i, x, int m.clientX, int m.clientY)
+                        })
+                        |> delay (100 * i)
+
+                })
             |> scan initialModel update
             |> map view
 

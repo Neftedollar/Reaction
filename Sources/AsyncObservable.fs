@@ -1,14 +1,10 @@
 namespace ReAction
 
-type TMapper<'a, 'b> =
-    // abstract method
-    | Mapper of ('a -> 'b)
-    | MapperAsync of ('a -> Async<'b>)
-
 [<AutoOpen>]
 module AsyncObservable =
     type AsyncObservable<'a> = AsyncObservable of Types.AsyncObservable<'a> with
-        member this.Unwrap = match this with AsyncObservable obs -> obs
+
+        static member unwrap (AsyncObservable obs) : Types.AsyncObservable<'a> = obs
 
         member this.Subscribe obv = (fun (AsyncObservable obs) -> obs) this obv
 
@@ -16,14 +12,14 @@ module AsyncObservable =
 
          // Concatenate two AsyncObservable streams
         static member (+) (x:AsyncObservable<'a>, y:AsyncObservable<'a>) =
-            concat [x.Unwrap; y.Unwrap]
+            Combine.concat [ AsyncObservable.unwrap x; AsyncObservable.unwrap y]
 
         static member (>>=) (source:AsyncObservable<'a>, mapper:'a*int -> Async<AsyncObservable<'b>>) : AsyncObservable<'b> =
             let mapperUnwrapped p : Async<Types.AsyncObservable<'b>> = async {
                 let! result = mapper p
-                return result.Unwrap
+                return AsyncObservable.unwrap result
             }
-            AsyncObservable <| (Transform.flatMapIndexedAsync mapperUnwrapped source.Unwrap)
+            AsyncObservable.unwrap source |> Transform.flatMapIndexedAsync mapperUnwrapped |> AsyncObservable
 
     let from (xs : seq<'a>) : AsyncObservable<'a> =
         AsyncObservable <| Creation.from xs
@@ -38,19 +34,44 @@ module AsyncObservable =
         from [ x ]
 
     let delay msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =
-        AsyncObservable <| Timeshift.debounce msecs source.Unwrap
+        AsyncObservable.unwrap source |>  Timeshift.delay msecs |> AsyncObservable
 
-    //let inline merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
-    //    AsyncObservable <| Combine.merge source.Unwrap
+    let debounce msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+        AsyncObservable.unwrap source |>  Timeshift.debounce msecs |> AsyncObservable
 
     let map (mapper:'a*int -> Async<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable <| Transform.mapIndexedAsync mapper source.Unwrap
+        AsyncObservable.unwrap source |> Transform.mapIndexedAsync mapper |> AsyncObservable
 
-    let filter predicate (source: AsyncObservable<'a>) : AsyncObservable<'a> =
-        match box predicate with
-        | :? ('a -> bool) as p -> AsyncObservable <| Filter.filter p source.Unwrap
-        | :? ('a -> Async<bool>) as p -> AsyncObservable <| Filter.filterAsync p source.Unwrap
-        | _ -> empty ()
+    let inline merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+        AsyncObservable.unwrap source
+            |> Transform.map (fun xs -> AsyncObservable.unwrap xs)
+            |> Combine.merge
+            |> AsyncObservable
+
+    let inline concat (sources : seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
+        Seq.map AsyncObservable.unwrap sources
+            |> Combine.concat
+            |> AsyncObservable
+
+    let flatMap (mapper:'a*int -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
+        let mapperUnwrapped p : Async<Types.AsyncObservable<'b>> = async {
+            let! result = mapper p
+            return AsyncObservable.unwrap result
+        }
+        AsyncObservable.unwrap source
+            |> Transform.flatMapIndexedAsync mapperUnwrapped
+            |> AsyncObservable
+
+    let filter (predicate: 'a -> Async<bool>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+        AsyncObservable.unwrap source
+            |> Filter.filterAsync predicate
+            |> AsyncObservable
 
     let scan (initial : 's) (scanner:'s -> 'a -> Async<'s>) (source: AsyncObservable<'a>) : AsyncObservable<'s> =
-        AsyncObservable <| Aggregate.scanAsync initial scanner source.Unwrap
+        AsyncObservable.unwrap source
+            |> Aggregate.scanAsync initial scanner
+            |> AsyncObservable
+
+    let stream<'a> () : AsyncObserver<'a> * AsyncObservable<'a> =
+        let obv, obs =Streams.stream ()
+        AsyncObserver obv, AsyncObservable obs

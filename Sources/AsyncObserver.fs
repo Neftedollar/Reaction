@@ -5,11 +5,11 @@ module AsyncObserver =
     type AsyncDisposable = AsyncDisposable of Types.AsyncDisposable
 
     type AsyncObserver<'a> = AsyncObserver of Types.AsyncObserver<'a> with
-        member this.Unwrap = match this with AsyncObserver obv -> obv
+        static member unwrap (AsyncObserver obv) : Types.AsyncObserver<'a> = obv
 
-        member this.OnNext (x : 'a) = this.Unwrap <| OnNext x
-        member this.OnError err = this.Unwrap <| OnError err
-        member this.OnCompleted () = this.Unwrap <| OnCompleted
+        member this.OnNext (x : 'a) = AsyncObserver.unwrap this <| OnNext x
+        member this.OnError err = AsyncObserver.unwrap this <| OnError err
+        member this.OnCompleted () = AsyncObserver.unwrap this <| OnCompleted
 
-        member this.Call n = this.Unwrap <| n
+        member this.Call n = AsyncObserver.unwrap this <| n
 

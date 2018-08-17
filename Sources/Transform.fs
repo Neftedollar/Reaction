@@ -34,7 +34,6 @@ module Transform =
         mapAsync (fun x -> async {
                     indexer.MoveNext () |> ignore
                     let index = indexer.Current
-                    printfn "%A" (x, index)
                     return! mapper (x, index)
                   }) source
 
@@ -44,16 +43,16 @@ module Transform =
 
     // The classic flap map (selectMany, bind, mapMerge) operator
     let flatMap (mapper : 'a -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> map mapper |> merge
+        source |> map mapper |> Combine.merge
 
     let flatMapIndexed (mapper : 'a*int -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapIndexed mapper |> merge
+        source |> mapIndexed mapper |> Combine.merge
 
     let flatMapAsync (mapper : 'a -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapAsync mapper |> merge
+        source |> mapAsync mapper |> Combine.merge
 
     let flatMapIndexedAsync (mapper : 'a*int -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapIndexedAsync mapper |> merge
+        source |> mapIndexedAsync mapper |> Combine.merge
 
     let switchLatest (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =

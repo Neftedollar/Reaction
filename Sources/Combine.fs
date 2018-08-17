@@ -3,7 +3,6 @@ namespace ReAction
 open Types
 open Core
 
-[<AutoOpen>]
 module Combine =
     // Concatenates an async observable of async observables (WIP)
     let concat (sources : seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
