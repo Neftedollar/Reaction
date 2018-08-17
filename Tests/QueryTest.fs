@@ -2,9 +2,8 @@ module Tests.Query
 
 open System.Threading.Tasks
 
-open AsyncReactive.Types
-open AsyncReactive.Core
-open AsyncReactive.Query
+open ReAction
+open ReAction.Query
 
 open NUnit.Framework
 open FsUnit
@@ -22,7 +21,7 @@ let ``test query empty`` () = toTask <| async {
     let obv = TestObserver<unit>()
 
     // Act
-    let! dispose = xs obv.OnNext
+    let! dispose = xs obv.OnNotification
 
     // Assert
     try
