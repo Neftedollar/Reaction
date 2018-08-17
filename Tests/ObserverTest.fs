@@ -3,6 +3,7 @@ module Tests.Observer
 open System.Threading.Tasks
 
 open ReAction
+open ReAction.Core
 
 open NUnit.Framework
 open FsUnit
@@ -59,7 +60,7 @@ let ``Test safe observer happy``() = toTask <| async {
     let safeObv = safeObserver obv.OnNotification
 
     // Act
-    let! dispose = xs safeObv
+    let! dispose = xs.Subscribe safeObv
     do! obv.AwaitIgnore ()
 
     // Assert

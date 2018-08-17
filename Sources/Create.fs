@@ -3,13 +3,14 @@ namespace ReAction
 open System.Threading
 open System
 
-[<AutoOpen>]
+open Types
+
 module Creation =
     // Create async observable from async worker function
     let fromAsync (worker : AsyncObserver<'a> -> CancellationToken -> Async<unit>) : AsyncObservable<_> =
         let subscribe (aobv : AsyncObserver<_>) : Async<AsyncDisposable> =
-            let cancel, token = canceller ()
-            let obv = safeObserver aobv
+            let cancel, token = Core.canceller ()
+            let obv = Core.safeObserver aobv
 
             async {
                 let! _ = Async.StartChild (worker obv token, 0)

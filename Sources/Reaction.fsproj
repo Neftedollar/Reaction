@@ -20,6 +20,8 @@
     <Compile Include="Timeshift.fs" />
     <Compile Include="Overloads.fs" />
     <Compile Include="Query.fs" />
+    <Compile Include="AsyncObserver.fs" />
+    <Compile Include="AsyncObservable.fs" />
     <Compile Include="Fable.fs" />
   </ItemGroup>
   <ItemGroup>

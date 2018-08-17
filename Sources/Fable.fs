@@ -2,6 +2,7 @@
 
 namespace ReAction
 
+
 #if FABLE_COMPILER
 open Fable
 open Fable.Helpers.React
@@ -17,11 +18,11 @@ type MouseEvent() =
 module Fable =
 #if FABLE_COMPILER
     let fromMouseMoves () : AsyncObservable<MouseEvent> =
-        let subscribe (obv : AsyncObserver<MouseEvent>) : Async<AsyncDisposable> =
+        let subscribe (obv : Types.AsyncObserver<MouseEvent>) : Async<Types.AsyncDisposable> =
             async {
                 let onMouseMove (ev : Fable.Import.Browser.MouseEvent) =
                     async {
-                        do! ev |> OnNext |> obv
+                        do! OnNext ev |> obv
                     } |> Async.StartImmediate
 
                 window.addEventListener_mousemove onMouseMove
@@ -31,7 +32,7 @@ module Fable =
                 return cancel
             }
 
-        subscribe
+        AsyncObservable subscribe
 
     /// Setup rendering of root React component inside html element identified by placeholderId
     let renderReact placeholderId view =

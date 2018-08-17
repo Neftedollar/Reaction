@@ -1,8 +1,10 @@
 namespace ReAction
 
-[<AutoOpen>]
+open Types
+open Core
+
 module Aggregate =
-    let scanAsync (initial : 's) (accumulator: AsyncAccumulator<'s,'a>) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
+    let scanAsync (initial : 's) (accumulator: 's -> 'a -> Async<'s>) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
         let subscribe (aobv : AsyncObserver<'s>) =
             let mutable state = initial
 
@@ -21,5 +23,5 @@ module Aggregate =
             }
         subscribe
 
-    let scan (initial : 's) (accumulator: Accumulator<'s,'a>) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
+    let scan (initial : 's) (accumulator: 's -> 'a -> 's) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
         scanAsync initial (fun s x -> async { return accumulator s x } ) source

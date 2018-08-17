@@ -1,8 +1,9 @@
 namespace ReAction
 
 open System.Collections.Generic
+open Types
+open Core
 
-[<AutoOpen>]
 module Streams =
      // Hot stream that supports multiple subscribers
     let stream<'a> () : AsyncObserver<'a> * AsyncObservable<'a> =

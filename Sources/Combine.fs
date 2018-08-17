@@ -1,6 +1,8 @@
 namespace ReAction
 
-[<AutoOpen>]
+open Types
+open Core
+
 module Combine =
     // Concatenates an async observable of async observables (WIP)
     let concat (sources : seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
@@ -55,7 +57,7 @@ module Combine =
         subscribe
 
     let startWith (items : seq<'a>) (source : AsyncObservable<'a>) =
-        concat [from items; source]
+        concat [Creation.from items; source]
 
     // Merges an async observable of async observables
     let merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =

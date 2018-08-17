@@ -1,9 +1,11 @@
 namespace ReAction
 
-[<AutoOpen>]
+open Types
+open Core
+
 module Transform =
     // The classic map (select) operator with async mapper
-    let mapAsync (mapper : AsyncMapper<'a,'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let mapAsync (mapper : 'a -> Async<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let subscribe (aobv : AsyncObserver<'b>) =
             async {
                 let _obv n =
@@ -21,36 +23,36 @@ module Transform =
         subscribe
 
     // The classic map (select) operator with sync mapper
-    let inline map (mapper : Mapper<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let inline map (mapper : 'a -> 'b) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         mapAsync (fun x -> async { return mapper x }) source
 
     // The classic map (select) operator with an indexed and async mapper
-    let mapIndexedAsync (mapper : AsyncMapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let mapIndexedAsync (mapper : 'a*int -> Async<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let infinite = Seq.initInfinite (fun index -> index)
         let indexer = infinite.GetEnumerator ()
 
         mapAsync (fun x -> async {
                     indexer.MoveNext () |> ignore
                     let index = indexer.Current
-                    return! mapper x index
+                    return! mapper (x, index)
                   }) source
 
     // The classic map (select) operator with sync and indexed mapper
-    let inline mapIndexed (mapper : MapperIndexed<'a, 'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        mapIndexedAsync (fun x i -> async { return mapper x i }) source
+    let inline mapIndexed (mapper : 'a*int -> 'b) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        mapIndexedAsync (fun (x, i) -> async { return mapper (x, i) }) source
 
     // The classic flap map (selectMany, bind, mapMerge) operator
-    let flatMap (mapper : Mapper<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> map mapper |> merge
+    let flatMap (mapper : 'a -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> map mapper |> Combine.merge
 
-    let flatMapIndexed (mapper : MapperIndexed<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapIndexed mapper |> merge
+    let flatMapIndexed (mapper : 'a*int -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> mapIndexed mapper |> Combine.merge
 
-    let flatMapAsync (mapper : AsyncMapper<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapAsync mapper |> merge
+    let flatMapAsync (mapper : 'a -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> mapAsync mapper |> Combine.merge
 
-    let flatMapIndexedAsync (mapper : AsyncMapperIndexed<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapIndexedAsync mapper |> merge
+    let flatMapIndexedAsync (mapper : 'a*int -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> mapIndexedAsync mapper |> Combine.merge
 
     let switchLatest (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
@@ -107,8 +109,8 @@ module Transform =
             }
         subscribe
 
-    let flatMapLatest (mapper : Mapper<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let flatMapLatest (mapper : 'a -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         source |> map mapper |> switchLatest
 
-    let flatMapLatestAsync (mapper : AsyncMapper<'a, AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let flatMapLatestAsync (mapper : 'a -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         source |> mapAsync mapper |> switchLatest
