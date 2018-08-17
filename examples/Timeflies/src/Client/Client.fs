@@ -48,7 +48,7 @@ let main = async {
 
     let moves =
         Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
-                |> flatMapIndexed (fun x i ->
+                >>= (fun x i ->
                         fromMouseMoves ()
                         |> delay (100 * i)
                         |> map (fun m ->

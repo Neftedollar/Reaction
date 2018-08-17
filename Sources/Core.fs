@@ -1,8 +1,8 @@
 namespace ReAction
 
 open System.Threading
+open Types
 
-[<AutoOpen>]
 module Core =
     let disposableEmpty () =
         async {

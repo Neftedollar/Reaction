@@ -1,5 +1,8 @@
 namespace ReAction
 
+open Types
+open Core
+
 [<AutoOpen>]
 module Aggregate =
     let scanAsync (initial : 's) (accumulator: AsyncAccumulator<'s,'a>) (source : AsyncObservable<'a>) : AsyncObservable<'s> =

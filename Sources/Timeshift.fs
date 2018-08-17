@@ -1,6 +1,8 @@
 namespace ReAction
 
 open System
+open Types
+open Core
 
 [<AutoOpen>]
 module Time =

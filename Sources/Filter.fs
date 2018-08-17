@@ -1,5 +1,8 @@
 namespace ReAction
 
+open Types
+open Core
+
 [<AutoOpen>]
 module Filter =
     // The classic filter (where) operator with async predicate

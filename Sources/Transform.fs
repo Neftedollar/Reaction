@@ -1,6 +1,8 @@
 namespace ReAction
 
-[<AutoOpen>]
+open Types
+open Core
+
 module Transform =
     // The classic map (select) operator with async mapper
     let mapAsync (mapper : AsyncMapper<'a,'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =

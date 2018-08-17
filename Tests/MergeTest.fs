@@ -3,6 +3,7 @@ module Tests.Merge
 open System.Threading.Tasks
 
 open ReAction
+open ReAction.Types
 
 open NUnit.Framework
 open FsUnit
@@ -21,7 +22,7 @@ let ``Test merge non empty emtpy``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNotification
+    let! sub = zs.Subscribe obv.OnNotification
     let! latest= obv.Await ()
 
     // Assert
@@ -41,7 +42,7 @@ let ``Test merge empty non emtpy``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNotification
+    let! sub = zs.Subscribe obv.OnNotification
     let! latest= obv.Await ()
 
     // Assert
@@ -62,7 +63,7 @@ let ``Test merge error error``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNotification
+    let! sub = zs.Subscribe obv.OnNotification
 
     try
         do! obv.Await () |> Async.Ignore
@@ -85,7 +86,7 @@ let ``Test merge two``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNotification
+    let! sub = zs.Subscribe obv.OnNotification
     do! obv.AwaitIgnore ()
 
     // Assert

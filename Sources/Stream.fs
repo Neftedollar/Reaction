@@ -1,6 +1,8 @@
 namespace ReAction
 
 open System.Collections.Generic
+open Types
+open Core
 
 [<AutoOpen>]
 module Streams =

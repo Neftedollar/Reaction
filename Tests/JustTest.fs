@@ -13,11 +13,11 @@ let toTask computation : Task = Async.StartAsTask computation :> _
 [<Test>]
 let ``Test just happy``() = toTask <| async {
     // Arrange
-    let xs = just 42
+    let xs = AsyncObservable.just 42
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs obv.OnNotification
+    let! dispose = xs.Subscribe obv.OnNotification
 
     // Assert
     let! latest = obv.Await ()
@@ -35,7 +35,7 @@ let ``Test just dispose after subscribe``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs obv.OnNotification
+    let! dispose = xs.Subscribe obv.OnNotification
     Async.StartImmediate (dispose ())
 
     // Assert
