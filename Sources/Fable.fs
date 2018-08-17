@@ -18,18 +18,18 @@ type MouseEvent() =
 module Fable =
 #if FABLE_COMPILER
     let fromMouseMoves () : AsyncObservable<MouseEvent> =
-        let subscribe (obv : Types.AsyncObserver<MouseEvent>) : Async<AsyncDisposable> =
+        let subscribe (obv : Types.AsyncObserver<MouseEvent>) : Async<Types.AsyncDisposable> =
             async {
                 let onMouseMove (ev : Fable.Import.Browser.MouseEvent) =
                     async {
-                        do! obv.OnNext ev
+                        do! OnNext ev |> obv
                     } |> Async.StartImmediate
 
                 window.addEventListener_mousemove onMouseMove
                 let cancel () = async {
                     window.removeEventListener ("mousemove", unbox onMouseMove)
                 }
-                return AsyncDisposable cancel
+                return cancel
             }
 
         AsyncObservable subscribe

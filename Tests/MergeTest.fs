@@ -3,7 +3,6 @@ module Tests.Merge
 open System.Threading.Tasks
 
 open ReAction
-open ReAction.Types
 
 open NUnit.Framework
 open FsUnit

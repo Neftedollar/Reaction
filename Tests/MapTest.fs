@@ -18,7 +18,7 @@ let ``Test map async``() = toTask <| async {
             return x * 10
         }
 
-    let xs = (just 42).map mapper
+    let xs = just 42 |> map mapper
     let obv = TestObserver<int>()
 
     // Act
@@ -40,7 +40,7 @@ let ``Test map sync``() = toTask <| async {
         x * 10
 
     let xs = just 42
-    let ys = xs.map mapper
+    let ys = xs |> map mapper
     let obv = TestObserver<int>()
 
     // Act
@@ -67,7 +67,7 @@ let ``Test map mapper throws exception``() = toTask <| async {
             raise error
         }
 
-    let xs = just "error" |> AsyncObservable.map mapper
+    let xs = just "error" |> map mapper
     let obv = TestObserver<unit>()
 
     // Act
