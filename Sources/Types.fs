@@ -10,8 +10,6 @@ module Types =
     type AsyncObserver<'a> = Notification<'a> -> Async<unit>
     type AsyncObservable<'a> = AsyncObserver<'a> -> Async<AsyncDisposable>
 
-    type Accumulator<'s, 't> = 's -> 't -> 's
-
     type RefCountCmd =
         | Increase
         | Decrease
