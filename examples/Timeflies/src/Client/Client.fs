@@ -4,6 +4,7 @@ open Fable.Helpers.React
 open Fable.Helpers.React.Props
 
 open ReAction
+open Fable.ReAction
 
 open Fable.Import.React
 open Fable
@@ -33,42 +34,32 @@ let update (currentModel : Model) (msg : Msg) : Async<Model> = async {
         return currentModel
 }
 
-let view (model : Model, i) = async {
+let view (model : Model) =
     let letters = model.Pos
     let offsetX x i = x + i * 10 + 15
 
-    return div [ Style [ FontFamily "Consolas, monospace"]] [
+    div [ Style [ FontFamily "Consolas, monospace"]] [
         for KeyValue(i, (c, x, y)) in letters do
             yield span [ Style [Top y; Left (offsetX x i); Position "absolute"] ] [
                 str c
             ]
     ]
-}
 
 let main = async {
     let initialModel = { Pos = Map.empty }
 
     let moves =
         Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
-            >>= (fun (x, i) -> async {
-                    return fromMouseMoves ()
-                        |> map (fun (m, _) -> async {
-                            return LetterMove (i, x, int m.clientX, int m.clientY)
-                        })
-                        |> delay (100 * i)
-
-                })
+            |> flatMapi (fun (x, i) ->
+                fromMouseMoves ()
+                    |> map (fun m -> LetterMove (i, x, int m.clientX, int m.clientY))
+                    |> delay (100 * i)
+            )
             |> scan initialModel update
             |> map view
 
-    let render n =
-        async {
-            match n with
-            | OnNext dom -> renderReact "elmish-app" dom
-            | _ -> ()
-        }
-
-    do! moves.Subscribe render |> Async.Ignore
+    let obv = renderReact "elmish-app"
+    do! moves.SubscribeAsyncIgnore obv
 }
 
 main |> Async.StartImmediate

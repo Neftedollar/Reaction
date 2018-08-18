@@ -21,7 +21,6 @@
     <Compile Include="Query.fs" />
     <Compile Include="AsyncObserver.fs" />
     <Compile Include="AsyncObservable.fs" />
-    <Compile Include="Fable.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs" PackagePath="fable\" />
