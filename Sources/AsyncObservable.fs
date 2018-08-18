@@ -8,21 +8,26 @@ module AsyncObservable =
         static member Unwrap (AsyncObservable obs) : Types.AsyncObservable<'a> = obs
 
         /// Subscribes an AsyncObserver to the AsyncObservable
-        member this.SubscribeAsync obv = (fun (AsyncObservable obs) -> obs) this obv
+        member this.SubscribeAsync obv = async {
+            let! disposable = AsyncObserver.Unwrap obv |> AsyncObservable.Unwrap this
+            return AsyncDisposable disposable
+        }
 
         /// Subscribes an AsyncObserver to the AsyncObservable, ignores the disposable
         member this.SubscribeAsyncIgnore obv = async {
-            let _ = (fun (AsyncObservable obs) -> obs) obv
+            let! _ = AsyncObserver.Unwrap obv |> AsyncObservable.Unwrap this
             return ()
         }
 
         /// Subscribes the observer function (Notification{'a} -> Async{unit}) to the AsyncObservable
-        member this.SubscribeAsync<'a> (obv: Notification<'a> -> Async<unit>) =
-            (fun (AsyncObservable obs) -> obs) this obv
+        member this.SubscribeAsync<'a> (obv: Notification<'a> -> Async<unit>) = async{
+            let! disposable = obv |> AsyncObservable.Unwrap this
+            return AsyncDisposable disposable
+        }
 
         /// Subscribes the observer function (Notification{'a} -> Async{unit}) to the AsyncObservable, ignores the disposable
         member this.SubscribeAsyncIgnore<'a> (obv: Notification<'a> -> Async<unit>) = async {
-            do! (fun (AsyncObservable obs) -> obs) this obv |> Async.Ignore
+            let! _ = obv |> AsyncObservable.Unwrap this
             ()
         }
 

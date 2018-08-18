@@ -2,8 +2,6 @@ namespace ReAction
 
 [<AutoOpen>]
 module AsyncObserver =
-    type AsyncDisposable = AsyncDisposable of Types.AsyncDisposable
-
     type AsyncObserver<'a> = AsyncObserver of Types.AsyncObserver<'a> with
         static member Unwrap (AsyncObserver obv) : Types.AsyncObserver<'a> = obv
 
