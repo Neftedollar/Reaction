@@ -51,57 +51,47 @@ queries to transform, filter, aggregate and time-shift our stream of messages.
 ```f#
 // Messages for updating the model
 type Msg =
-    | MouseEvent of MouseEvent
-    | LetterMove of int * char * float * float
+    | Letter of int * string * int * int
 
 // Model (state) for updating the view
 type Model = {
-    Pos: Map<int, char * float * float>
+    Letters: Map<int, string * int * int>
 }
 
-let update (currentModel : Model) (msg : Msg) =
-    match currentModel.Pos, msg with
-    | _, LetterMove (i, c, x, y) ->
-        { currentModel with Pos = currentModel.Pos.Add (i, (c, x, y)) }
-    | _ ->
-        currentModel
+let update (currentModel : Model) (msg : Msg) : Model =
+    match currentModel.Letters, msg with
+    | _, Letter (i, c, x, y) ->
+        { currentModel with Letters = currentModel.Letters.Add (i, (c, x, y)) }
 
 // View for being observed by React
 let view (model : Model) =
-    let letters = model.Pos
+    let letters = model.Letters
+    let offsetX x i = x + i * 10 + 15
 
     div [ Style [ FontFamily "Consolas, monospace"]] [
         for KeyValue(i, (c, x, y)) in letters do
-            yield span [ Style [Top y; Left x; Position "absolute"] ] [
-                str (string c)
+            yield span [ Style [Top y; Left (offsetX x i); Position "absolute"] ] [
+                str c
             ]
     ]
 
 let main = async {
-    let initialModel = { Pos = Map.empty }
+    let initialModel = { Letters = Map.empty }
 
-    // Query
     let moves =
         Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
             |> flatMapi (fun (x, i) ->
                 fromMouseMoves ()
-                    |> map (fun m -> LetterMove (i, x, int m.clientX, int m.clientY))
+                    |> map (fun m -> Letter (i, x, int m.clientX, int m.clientY))
                     |> delay (100 * i)
             )
             |> scan initialModel update
             |> map view
 
     // React observer
-    let render n =
-        async {
-            match n with
-            | OnNext dom -> renderReact "elmish-app" dom
-            | _ -> ()
-        }
+    let obv = renderReact "elmish-app"
 
-    // Subscribe
-    do! moves.Subscribe render |> Async.Ignore
+    // Subscribe (ignores the disposable)
+    do! moves.SubscribeAsyncIgnore obv
 }
-
-main |> Async.StartImmediate
 ```

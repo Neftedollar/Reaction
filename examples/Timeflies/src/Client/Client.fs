@@ -14,28 +14,24 @@ open Fable
 // we mark it as optional, because initially it will not be available from the client
 // the initial value will be requested from server
 type Model = {
-    Pos: Map<int, string * int * int>
+    Letters: Map<int, string * int * int>
 }
 
 // The Msg type defines what events/actions can occur while the application is running
 // the state of the application changes *only* in reaction to these events
 type Msg =
-    | MouseEvent of MouseEvent
-    | LetterMove of int * string * int * int
+    | Letter of int * string * int * int
 
 // The update function computes the next state of the application based on the current state and the incoming events/messages
 // It can also run side-effects (encoded as commands) like calling the server via Http.
 // these commands in turn, can dispatch messages to which the update function will react.
-let update (currentModel : Model) (msg : Msg) : Async<Model> = async {
-    match currentModel.Pos, msg with
-    | _, LetterMove (i, c, x, y) ->
-        return { currentModel with Pos = currentModel.Pos.Add (i, (c, x, y)) }
-    | _ ->
-        return currentModel
-}
+let update (currentModel : Model) (msg : Msg) : Model =
+    match currentModel.Letters, msg with
+    | _, Letter (i, c, x, y) ->
+        { currentModel with Letters = currentModel.Letters.Add (i, (c, x, y)) }
 
 let view (model : Model) =
-    let letters = model.Pos
+    let letters = model.Letters
     let offsetX x i = x + i * 10 + 15
 
     div [ Style [ FontFamily "Consolas, monospace"]] [
@@ -46,13 +42,13 @@ let view (model : Model) =
     ]
 
 let main = async {
-    let initialModel = { Pos = Map.empty }
+    let initialModel = { Letters = Map.empty }
 
     let moves =
         Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
             |> flatMapi (fun (x, i) ->
                 fromMouseMoves ()
-                    |> map (fun m -> LetterMove (i, x, int m.clientX, int m.clientY))
+                    |> map (fun m -> Letter (i, x, int m.clientX, int m.clientY))
                     |> delay (100 * i)
             )
             |> scan initialModel update
