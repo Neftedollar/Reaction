@@ -17,7 +17,7 @@ let ``Test from empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs.Subscribe obv.OnNotification
+    let! dispose = xs.SubscribeAsync obv.OnNotification
 
     do! obv.AwaitIgnore ()
 
@@ -35,7 +35,7 @@ let ``Test from non empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs.Subscribe obv.OnNotification
+    let! dispose = xs.SubscribeAsync obv.OnNotification
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -52,7 +52,7 @@ let ``Test from dispose after subscribe``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs.Subscribe obv.OnNotification
+    let! dispose = xs.SubscribeAsync obv.OnNotification
     do! dispose ()
 
     // Assert

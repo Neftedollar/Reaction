@@ -23,7 +23,7 @@ let ``Test filter``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.Subscribe obv.OnNotification
+    let! sub = xs.SubscribeAsync obv.OnNotification
     let! result = obv.Await ()
 
     // Assert
@@ -50,7 +50,7 @@ let ``Test filter predicate throws exception``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.Subscribe obv.OnNotification
+    let! sub = xs.SubscribeAsync obv.OnNotification
 
     try
         do! obv.AwaitIgnore ()

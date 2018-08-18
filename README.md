@@ -19,10 +19,6 @@ type Notification<'a> =
 type AsyncDisposable = unit -> Async<unit>
 type AsyncObserver<'a> = Notification<'a> -> Async<unit>
 type AsyncObservable<'a> = AsyncObserver<'a> -> Async<AsyncDisposable>
-
-type AsyncMapper<'a, 'b> = 'a -> Async<'b>
-type AsyncPredicate<'a> = 'a -> Async<bool>
-type AsyncAccumulator<'s, 't> = 's -> 't -> Async<'s>
 ```
 
 ### Operators
@@ -31,11 +27,11 @@ The following parameterized async observerable returning functions (operators) a
 currently supported. Other operators may be implemented on-demand, but there are
 currently no plans to make this into a full featured Rx implementation.
 
-- map, mapIndexed, mapAsync, mapIndexedAsync
+- map, mapi, mapAsync, mapiAsync
 - filter, filterAsync
 - scan, scanAsync
 - merge
-- flatMap, flatMapIndexed, flatMapAsync, flatMapIndexedAsync
+- flatMap, flatMapi, flatMapAsync, flatMapiAsync
 - concat
 - startWith
 - distinctUntilChanged
@@ -85,14 +81,15 @@ let main = async {
     let initialModel = { Pos = Map.empty }
 
     // Query
-    let moves = from <| Seq.toList "TIME FLIES LIKE AN ARROW"
-                |> flatMapIndexed (fun x i ->
-                        fromMouseMoves ()
-                        |> delay (100.0 * float i)
-                        |> map (fun m -> LetterMove (i, x, m.clientX + float i * 10.0 + 15.0, m.clientY))
-                   )
-                |> scan initialModel update
-                |> map view
+    let moves =
+        Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
+            |> flatMapi (fun (x, i) ->
+                fromMouseMoves ()
+                    |> map (fun m -> LetterMove (i, x, int m.clientX, int m.clientY))
+                    |> delay (100 * i)
+            )
+            |> scan initialModel update
+            |> map view
 
     // React observer
     let render n =
@@ -103,7 +100,7 @@ let main = async {
         }
 
     // Subscribe
-    do! moves render |> Async.Ignore
+    do! moves.Subscribe render |> Async.Ignore
 }
 
 main |> Async.StartImmediate

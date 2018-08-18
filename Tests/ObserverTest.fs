@@ -60,7 +60,7 @@ let ``Test safe observer happy``() = toTask <| async {
     let safeObv = safeObserver obv.OnNotification
 
     // Act
-    let! dispose = xs.Subscribe safeObv
+    let! dispose = xs.SubscribeAsync safeObv
     do! obv.AwaitIgnore ()
 
     // Assert
