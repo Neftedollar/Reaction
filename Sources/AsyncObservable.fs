@@ -10,15 +10,17 @@ module AsyncObservable =
         /// Subscribes an AsyncObserver to the AsyncObservable
         member this.SubscribeAsync obv = (fun (AsyncObservable obs) -> obs) this obv
 
+        /// Subscribes an AsyncObserver to the AsyncObservable, ignores the disposable
         member this.SubscribeAsyncIgnore obv = async {
             let _ = (fun (AsyncObservable obs) -> obs) obv
             return ()
         }
 
-        /// Subscribes the obsever function (Notification{'a} -> Async{unit}) to the AsyncObservable
+        /// Subscribes the observer function (Notification{'a} -> Async{unit}) to the AsyncObservable
         member this.SubscribeAsync<'a> (obv: Notification<'a> -> Async<unit>) =
             (fun (AsyncObservable obs) -> obs) this obv
 
+        /// Subscribes the observer function (Notification{'a} -> Async{unit}) to the AsyncObservable, ignores the disposable
         member this.SubscribeAsyncIgnore<'a> (obv: Notification<'a> -> Async<unit>) = async {
             do! (fun (AsyncObservable obs) -> obs) this obv |> Async.Ignore
             ()
@@ -108,7 +110,17 @@ module AsyncObservable =
             |> Filter.filterAsync predicate
             |> AsyncObservable
 
-    let scan (initial : 's) (scanner:'s -> 'a -> Async<'s>) (source: AsyncObservable<'a>) : AsyncObservable<'s> =
+    let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+        AsyncObservable.Unwrap source
+            |> Filter.distinctUntilChanged
+            |> AsyncObservable
+
+    let scan (initial : 's) (scanner:'s -> 'a -> 's) (source: AsyncObservable<'a>) : AsyncObservable<'s> =
+        AsyncObservable.Unwrap source
+            |> Aggregate.scan initial scanner
+            |> AsyncObservable
+
+    let scanAsync (initial : 's) (scanner:'s -> 'a -> Async<'s>) (source: AsyncObservable<'a>) : AsyncObservable<'s> =
         AsyncObservable.Unwrap source
             |> Aggregate.scanAsync initial scanner
             |> AsyncObservable
