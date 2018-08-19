@@ -1,6 +1,6 @@
-# ¡Re:action!
+# ¡Reaction!
 
-Re:action is a lightweight Async Reactive ([Rx](http://reactivex.io/)) [Elmish](https://elmish.github.io/)-ish library for F# targeting [Fable](http://fable.io/) and [React](https://reactjs.org/). This means that the code is [transpiled](https://en.wikipedia.org/wiki/Source-to-source_compiler) to JavaScript and thus the same code may be used both client and server side for full stack software development.
+Reaction is a lightweight Async Reactive ([Rx](http://reactivex.io/)) [Elmish](https://elmish.github.io/)-ish library for F# targeting [Fable](http://fable.io/) and [React](https://reactjs.org/). This means that the code is [transpiled](https://en.wikipedia.org/wiki/Source-to-source_compiler) to JavaScript and thus the same code may be used both client and server side for full stack software development.
 
 Currently a playground project for experimenting with MVU-based web applications using async reactive functional programming (Async Observables) in F#. The project is heavily inspired by [Elm](http://elm-lang.org/) and [Elmish](https://elmish.github.io/) but currently a separate project since it does not have any dependencies to any of these projects. The inspiration for Async Observables and plain old functions (POF) comes from my own work with [aioreactive](https://github.com/dbrattli/aioreactive).
 
@@ -41,7 +41,7 @@ currently no plans to make this into a full featured Rx implementation.
 - withLatestFrom
 - switchLatest
 
-## Elmish-ish example
+## Elmish Reaction example
 
 Reactive [MVU archtecture](https://guide.elm-lang.org/architecture/) example ([source code](https://github.com/dbrattli/Re-action/tree/master/examples/Timeflies)) using Re:action for impl.
 the classic Time Flies example from RxJS. No jQuery or other js-libraries in this example. This code

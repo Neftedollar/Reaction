@@ -43,9 +43,9 @@ let ``test query map`` () =
             return x * 10
         }
 
-    let xs = from <| seq { 1 .. 5 }
+    let xs = ofSeq <| seq { 1 .. 5 }
     let ys = asyncReact {
-        //let! n = from <| seq { 1 .. 5 }
+        //let! n = ofSeq <| seq { 1 .. 5 }
         ()
     }
 

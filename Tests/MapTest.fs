@@ -39,8 +39,7 @@ let ``Test map sync``() = toTask <| async {
     let mapper x =
         x * 10
 
-    let xs = just 42
-    let ys = xs |> map mapper
+    let xs = just 42 |> map mapper
     let obv = TestObserver<int>()
 
     // Act

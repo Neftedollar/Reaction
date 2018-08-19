@@ -57,11 +57,11 @@ module Transform =
     let switchLatest (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
-            let refCount = refCountActor 1 (async {
+            let refCount = refCountAgent 1 (async {
                 do! safeObserver OnCompleted
             })
 
-            let innerActor =
+            let innerAgent =
                 let obv n =
                     async {
                         match n with
@@ -94,7 +94,7 @@ module Transform =
                         match ns with
                         | OnNext xs ->
                             refCount.Post Increase
-                            InnerObservable xs |> innerActor.Post
+                            InnerObservable xs |> innerAgent.Post
                         | OnError e -> do! OnError e |> safeObserver
                         | OnCompleted -> refCount.Post Decrease
                     }
@@ -103,7 +103,7 @@ module Transform =
                 let cancel () =
                     async {
                         do! dispose ()
-                        innerActor.Post Dispose
+                        innerAgent.Post Dispose
                     }
                 return cancel
             }

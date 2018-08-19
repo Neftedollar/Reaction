@@ -35,7 +35,7 @@ let ``Test concat emtpy empty``() = toTask <| async {
 [<Test>]
 let ``Test concat non emtpy empty``() = toTask <| async {
     // Arrange
-    let xs = from <| seq { 1..3 }
+    let xs = ofSeq <| seq { 1..3 }
     let ys = empty ()
     let zs = concat [ xs; ys ]
     let obv = TestObserver<int>()
@@ -56,7 +56,7 @@ let ``Test concat non emtpy empty``() = toTask <| async {
 let ``Test concat empty non empty``() = toTask <| async {
     // Arrange
     let xs = empty ()
-    let ys = from <| seq { 1..3 }
+    let ys = ofSeq <| seq { 1..3 }
     let zs = concat [ xs; ys ]
     let obv = TestObserver<int>()
 
@@ -75,8 +75,8 @@ let ``Test concat empty non empty``() = toTask <| async {
 [<Test>]
 let ``Test concat two``() = toTask <| async {
     // Arrange
-    let xs = from <| seq { 1..3 }
-    let ys = from <| seq { 4..6 }
+    let xs = ofSeq <| seq { 1..3 }
+    let ys = ofSeq <| seq { 4..6 }
     let zs = concat [ xs; ys ]
     let obv = TestObserver<int>()
 
@@ -91,12 +91,12 @@ let ``Test concat two``() = toTask <| async {
     let expected = [ OnNext 1; OnNext 2; OnNext 3; OnNext 4; OnNext 5; OnNext 6; OnCompleted ]
     Assert.That(actual, Is.EquivalentTo(expected))
 }
-(*
+
 [<Test>]
 let ``Test concat +``() = toTask <| async {
     // Arrange
-    let xs = from <| seq { 1..3 }
-    let ys = from <| seq { 4..6 }
+    let xs = ofSeq <| seq { 1..3 }
+    let ys = ofSeq <| seq { 4..6 }
     let zs = xs + ys
     let obv = TestObserver<int>()
 
@@ -111,13 +111,13 @@ let ``Test concat +``() = toTask <| async {
     let expected = [ OnNext 1; OnNext 2; OnNext 3; OnNext 4; OnNext 5; OnNext 6; OnCompleted ]
     Assert.That(actual, Is.EquivalentTo(expected))
 }
-*)
+
 [<Test>]
 let ``Test concat three``() = toTask <| async {
     // Arrange
-    let a = from <| seq { 1..2 }
-    let b = from <| seq { 3..4 }
-    let c = from <| seq { 5..6 }
+    let a = ofSeq <| seq { 1..2 }
+    let b = ofSeq <| seq { 3..4 }
+    let c = ofSeq <| seq { 5..6 }
     let xs = concat [ a; b; c ]
     let obv = TestObserver<int>()
 
@@ -140,7 +140,7 @@ let ``Test concat fail with non emtpy ``() = toTask <| async {
     // Arrange
     let error = MyError "error"
     let xs = fail error
-    let ys = from <| seq { 1..3 }
+    let ys = ofSeq <| seq { 1..3 }
     let zs = concat [ xs; ys ]
     let obv = TestObserver<int>()
 
@@ -152,7 +152,6 @@ let ``Test concat fail with non emtpy ``() = toTask <| async {
     | _ -> ()
 
     // Assert
-    //result |> should equal 3
     obv.Notifications |> should haveCount 1
     let actual = obv.Notifications |> Seq.toList
     let expected : Notification<int> list = [ OnError error ]

@@ -60,7 +60,7 @@ module Core =
         }
         safeObv
 
-    let refCountActor initial action =
+    let refCountAgent initial action =
         MailboxProcessor.Start(fun inbox ->
             let rec messageLoop count = async {
                 let! cmd = inbox.Receive()

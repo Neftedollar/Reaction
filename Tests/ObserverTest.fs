@@ -55,7 +55,7 @@ let ``Test safe observer error sequence``() = toTask <| async {
 [<Test>]
 let ``Test safe observer happy``() = toTask <| async {
     // Arrange
-    let xs = from [ 1..3]
+    let xs = ofSeq [ 1..3]
     let obv = TestObserver<int>()
     let safeObv = safeObserver obv.OnNotification
 

@@ -14,7 +14,7 @@ module AsyncObservable =
         }
 
         /// Subscribes an AsyncObserver to the AsyncObservable, ignores the disposable
-        member this.SubscribeAsyncIgnore obv = async {
+        member this.RunAsync obv = async {
             let! _ = AsyncObserver.Unwrap obv |> AsyncObservable.Unwrap this
             return ()
         }
@@ -26,7 +26,7 @@ module AsyncObservable =
         }
 
         /// Subscribes the observer function (Notification{'a} -> Async{unit}) to the AsyncObservable, ignores the disposable
-        member this.SubscribeAsyncIgnore<'a> (obv: Notification<'a> -> Async<unit>) = async {
+        member this.RunAsync<'a> (obv: Notification<'a> -> Async<unit>) = async {
             let! _ = obv |> AsyncObservable.Unwrap this
             ()
         }
@@ -51,8 +51,9 @@ module AsyncObservable =
             }
             AsyncObservable.Unwrap source |> Transform.flatMapAsync mapperUnwrapped |> AsyncObservable
 
-    let from (xs : seq<'a>) : AsyncObservable<'a> =
-        AsyncObservable <| Creation.from xs
+    let ofSeq
+     (xs : seq<'a>) : AsyncObservable<'a> =
+        AsyncObservable <| Creation.ofSeq xs
 
     let empty () : AsyncObservable<'a> =
         AsyncObservable <| Creation.empty ()

@@ -57,17 +57,17 @@ module Combine =
         subscribe
 
     let startWith (items : seq<'a>) (source : AsyncObservable<'a>) =
-        concat [Creation.from items; source]
+        concat [Creation.ofSeq items; source]
 
     // Merges an async observable of async observables
     let merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
-            let refCount = refCountActor 1 (async {
+            let refCount = refCountAgent 1 (async {
                 do! safeObserver OnCompleted
             })
 
-            let innerActor =
+            let innerAgent =
                 let obv n =
                     async {
                         match n with
@@ -101,7 +101,7 @@ module Combine =
                         match ns with
                         | OnNext xs ->
                             refCount.Post Increase
-                            InnerObservable xs |> innerActor.Post
+                            InnerObservable xs |> innerAgent.Post
                         | OnError e -> do! OnError e |> safeObserver
                         | OnCompleted -> refCount.Post Decrease
                     }
@@ -110,7 +110,7 @@ module Combine =
                 let cancel () =
                     async {
                         do! dispose ()
-                        innerActor.Post Dispose
+                        innerAgent.Post Dispose
                     }
                 return cancel
             }

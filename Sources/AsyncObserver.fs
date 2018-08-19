@@ -9,5 +9,5 @@ module AsyncObserver =
         member this.OnErrorAsync err = AsyncObserver.Unwrap this <| OnError err
         member this.OnCompletedAsync () = AsyncObserver.Unwrap this <| OnCompleted
 
-        member this.NotifyAsync n = AsyncObserver.Unwrap this n
+        member this.PostAsync n = AsyncObserver.Unwrap this n
 

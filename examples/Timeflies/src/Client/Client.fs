@@ -6,9 +6,6 @@ open Fable.Helpers.React.Props
 open ReAction
 open Fable.ReAction
 
-open Fable.Import.React
-open Fable
-
 // The model holds data that you want to keep track of while the application is running
 // in this case, we are keeping track of a counter
 // we mark it as optional, because initially it will not be available from the client
@@ -55,7 +52,7 @@ let main = async {
             |> map view
 
     let obv = renderReact "elmish-app"
-    do! moves.SubscribeAsyncIgnore obv
+    do! moves.RunAsync obv
 }
 
 main |> Async.StartImmediate
