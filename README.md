@@ -8,7 +8,7 @@ Currently a playground project for experimenting with MVU-based web applications
 
 The difference between an "Async Observable" and an "Observable" is that with "Async Observables" you need to await operations such as subscribe, OnNext, OnError, OnCompleted. This enables subscribe in create type operators to do async operations i.e setup network connections, and observers may finally do async operations such as writing to disk (observers are all about side-effects right?).
 
-Re:action uses simple functions instead of classes and the traditional Rx interfaces. Some of the operators uses mailbox processors (actors) to implement the observer pipeline in order to avoid locks and mutables. This makes the code more Fable friendly for easily transpiling to JavaScript. Here are the core types:
+Reaction uses simple functions instead of classes and the traditional Rx interfaces. Some of the operators uses mailbox processors (actors) to implement the observer pipeline in order to avoid locks and mutables. This makes the code more Fable friendly for easily transpiling to JavaScript. Here are the core types:
 
 ```f#
 type Notification<'a> =
@@ -43,7 +43,7 @@ currently no plans to make this into a full featured Rx implementation.
 
 ## Elmish Reaction example
 
-Reactive [MVU archtecture](https://guide.elm-lang.org/architecture/) example ([source code](https://github.com/dbrattli/Re-action/tree/master/examples/Timeflies)) using Re:action for impl.
+Reactive [MVU archtecture](https://guide.elm-lang.org/architecture/) example ([source code](https://github.com/dbrattli/Re-action/tree/master/examples/Timeflies)) using Reaction for impl.
 the classic Time Flies example from RxJS. No jQuery or other js-libraries in this example. This code
 is very simplar to Elmish but the difference is that we can compose powerful reactive
 queries to transform, filter, aggregate and time-shift our stream of messages.
@@ -92,6 +92,6 @@ let main = async {
     let obv = renderReact "elmish-app"
 
     // Subscribe (ignores the disposable)
-    do! moves.SubscribeAsyncIgnore obv
+    do! moves.RunAsync obv
 }
 ```
