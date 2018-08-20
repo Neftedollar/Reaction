@@ -5,3 +5,5 @@ nuget Microsoft.NET.Test.Sdk
 nuget NUnit
 nuget NUnit3TestAdapter
 nuget FsUnit
+nuget Fable.Core
+nuget Fable.Elmish.React

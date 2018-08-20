@@ -8,6 +8,7 @@
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\..\..\Sources\Reaction.fsproj" />
+      <ProjectReference Include="..\..\..\..\Fable.Reaction\Fable.Reaction.fsproj" />
     </ItemGroup>
     <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

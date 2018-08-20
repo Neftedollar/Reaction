@@ -15,13 +15,13 @@ let toTask computation : Task = Async.StartAsTask computation :> _
 [<Test>]
 let ``Test merge non empty emtpy``() = toTask <| async {
     // Arrange
-    let xs = from <| seq { 1..5 }
+    let xs = ofSeq <| seq { 1..5 }
     let ys : AsyncObservable<int> = empty ()
-    let zs = from <| [ xs; ys ] |> merge
+    let zs = ofSeq <| [ xs; ys ] |> merge
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNotification
+    let! sub = zs.SubscribeAsync obv.OnNotification
     let! latest= obv.Await ()
 
     // Assert
@@ -36,12 +36,12 @@ let ``Test merge non empty emtpy``() = toTask <| async {
 let ``Test merge empty non emtpy``() = toTask <| async {
     // Arrange
     let xs : AsyncObservable<int> = empty ()
-    let ys = from <| seq { 1..5 }
-    let zs = from <| [ xs; ys ] |> merge
+    let ys = ofSeq <| seq { 1..5 }
+    let zs = ofSeq <| [ xs; ys ] |> merge
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNotification
+    let! sub = zs.SubscribeAsync obv.OnNotification
     let! latest= obv.Await ()
 
     // Assert
@@ -58,11 +58,11 @@ let ``Test merge error error``() = toTask <| async {
     let error = MyError "error"
     let xs = fail error
     let ys = fail error
-    let zs = from <| [ xs; ys ] |> merge
+    let zs = ofSeq <| [ xs; ys ] |> merge
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNotification
+    let! sub = zs.SubscribeAsync obv.OnNotification
 
     try
         do! obv.Await () |> Async.Ignore
@@ -79,13 +79,13 @@ let ``Test merge error error``() = toTask <| async {
 [<Test>]
 let ``Test merge two``() = toTask <| async {
     // Arrange
-    let xs  = from <| seq { 1..3 }
-    let ys = from <| seq { 4..5 }
-    let zs = from <| [ xs; ys ] |> merge
+    let xs  = ofSeq <| seq { 1..3 }
+    let ys = ofSeq <| seq { 4..5 }
+    let zs = ofSeq <| [ xs; ys ] |> merge
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNotification
+    let! sub = zs.SubscribeAsync obv.OnNotification
     do! obv.AwaitIgnore ()
 
     // Assert

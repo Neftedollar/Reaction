@@ -15,7 +15,7 @@ let toTask computation : Task = Async.StartAsTask computation :> _
 [<Test>]
 let ``test query empty`` () = toTask <| async {
     // Arrange
-    let xs = query {
+    let xs = asyncReact {
         ()
     }
     let obv = TestObserver<unit>()
@@ -37,19 +37,17 @@ let ``test query empty`` () = toTask <| async {
 
 
 [<Test>]
-let test_query () =
+let ``test query map`` () =
     let mapper x =
         async {
             return x * 10
         }
 
-    let predicate a =
-        async {
-            return a > 10
-        }
-
-    let xs = from <| seq { 1 .. 5 }
-    //let ys = query {}
+    let xs = ofSeq <| seq { 1 .. 5 }
+    let ys = asyncReact {
+        //let! n = ofSeq <| seq { 1 .. 5 }
+        ()
+    }
 
     let obv n =
         async {

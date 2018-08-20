@@ -11,7 +11,7 @@ open Tests.Utils
 let toTask computation : Task = Async.StartAsTask computation :> _
 
 [<Test>]
-let ``Test map``() = toTask <| async {
+let ``Test map async``() = toTask <| async {
     // Arrange
     let mapper x =
         async {
@@ -22,7 +22,28 @@ let ``Test map``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNotification
+    let! sub = xs.SubscribeAsync obv.OnNotification
+    let! latest= obv.Await ()
+
+    // Assert
+    latest |> should equal 420
+    obv.Notifications |> should haveCount 2
+    let actual = obv.Notifications |> Seq.toList
+    let expected : Notification<int> list = [ OnNext 420; OnCompleted ]
+    Assert.That(actual, Is.EquivalentTo(expected))
+}
+
+[<Test>]
+let ``Test map sync``() = toTask <| async {
+    // Arrange
+    let mapper x =
+        x * 10
+
+    let xs = just 42 |> map mapper
+    let obv = TestObserver<int>()
+
+    // Act
+    let! sub = xs.SubscribeAsync obv.OnNotification
     let! latest= obv.Await ()
 
     // Assert
@@ -48,7 +69,7 @@ let ``Test map mapper throws exception``() = toTask <| async {
     let obv = TestObserver<unit>()
 
     // Act
-    let! cnl = xs obv.OnNotification
+    let! cnl = xs.SubscribeAsync obv.OnNotification
 
     try
         do! obv.AwaitIgnore ()

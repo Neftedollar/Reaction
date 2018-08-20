@@ -6,8 +6,7 @@
   <ItemGroup>
     <Compile Include="Utils.fs" />
     <Compile Include="ObserverTest.fs" />
-    <Compile Include="JustTest.fs" />
-    <Compile Include="FromTest.fs" />
+    <Compile Include="CreateTest.fs" />
     <Compile Include="MapTest.fs" />
     <Compile Include="FilterTest.fs" />
     <Compile Include="MergeTest.fs" />

@@ -454,3 +454,5 @@ bower_components
 
 ### WebSharper ###
 Scripts/
+bundle.js
+bundle.js.map

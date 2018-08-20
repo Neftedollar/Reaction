@@ -19,10 +19,10 @@ let ``Test debounce single value``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNotification
-    do! OnNext 42 |> dispatch
+    let! sub = xs.SubscribeAsync (obv.OnNotification)
+    do! dispatch.OnNextAsync 42
     do! Async.Sleep 150
-    do! OnCompleted |> dispatch
+    do! dispatch.OnCompletedAsync ()
     let! latest= obv.Await ()
 
     // Assert
@@ -42,11 +42,11 @@ let ``Test debounce two immediate values``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNotification
-    do! OnNext 42 |> dispatch
-    do! OnNext 43 |> dispatch
+    let! sub = xs.SubscribeAsync obv.OnNotification
+    do! dispatch.OnNextAsync 42
+    do! dispatch.OnNextAsync 43
     do! Async.Sleep 150
-    do! OnCompleted |> dispatch
+    do! dispatch.OnCompletedAsync ()
     let! latest= obv.Await ()
 
     // Assert
@@ -66,12 +66,12 @@ let ``Test debounce two separate values``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs obv.OnNotification
-    do! OnNext 42 |> dispatch
+    let! sub = xs.SubscribeAsync obv.OnNotification
+    do! dispatch.OnNextAsync 42
     do! Async.Sleep 150
-    do! OnNext 43 |> dispatch
+    do! dispatch.OnNextAsync 43
     do! Async.Sleep 150
-    do! OnCompleted |> dispatch
+    do! dispatch.OnCompletedAsync ()
     let! latest= obv.Await ()
 
     // Assert

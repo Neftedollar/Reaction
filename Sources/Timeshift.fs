@@ -1,9 +1,10 @@
 namespace ReAction
 
 open System
+open Types
+open Core
 
-[<AutoOpen>]
-module Time =
+module Timeshift =
     // Delays each notification with the given number of milliseconds
     let delay (msecs : int) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
