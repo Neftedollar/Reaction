@@ -1,4 +1,4 @@
-# ¡Reaction!
+# ★ Reaction! ★
 
 Reaction is a lightweight Async Reactive ([Rx](http://reactivex.io/)) [Elmish](https://elmish.github.io/)-ish library for F# targeting [Fable](http://fable.io/) and [React](https://reactjs.org/). This means that the code is [transpiled](https://en.wikipedia.org/wiki/Source-to-source_compiler) to JavaScript and thus the same code may be used both client and server side for full stack software development.
 
@@ -79,7 +79,7 @@ let main = async {
     let initialModel = { Letters = Map.empty }
 
     let moves =
-        Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
+        Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> ofSeq
             |> flatMapi (fun (x, i) ->
                 fromMouseMoves ()
                     |> map (fun m -> Letter (i, x, int m.clientX, int m.clientY))
