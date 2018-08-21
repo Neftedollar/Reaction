@@ -16,7 +16,7 @@ let ``Test safe observer empty sequence``() = toTask <| async {
     // Arrange
     let xs = fromNotification Seq.empty
     let obv = TestObserver<int>()
-    let safeObv = safeObserver obv.OnNotification
+    let safeObv = safeObserver obv.PostAsync
 
     // Act
     let! dispose = xs safeObv
@@ -36,7 +36,7 @@ let ``Test safe observer error sequence``() = toTask <| async {
     let error = MyError "error"
     let xs = fromNotification [ OnError error ]
     let obv = TestObserver<int>()
-    let safeObv = safeObserver obv.OnNotification
+    let safeObv = safeObserver obv.PostAsync
 
     // Act
     let! dispose = xs safeObv
@@ -57,7 +57,7 @@ let ``Test safe observer happy``() = toTask <| async {
     // Arrange
     let xs = ofSeq [ 1..3]
     let obv = TestObserver<int>()
-    let safeObv = safeObserver obv.OnNotification
+    let safeObv = safeObserver obv.PostAsync
 
     // Act
     let! dispose = xs.SubscribeAsync safeObv
@@ -75,7 +75,7 @@ let ``Test safe observer stops after completed``() = toTask <| async {
     // Arrange
     let xs = fromNotification [ OnNext 1; OnCompleted; OnNext 2]
     let obv = TestObserver<int>()
-    let safeObv = safeObserver obv.OnNotification
+    let safeObv = safeObserver obv.PostAsync
 
     // Act
     let! dispose = xs safeObv
@@ -93,7 +93,7 @@ let ``Test safe observer stops after completed completed``() = toTask <| async {
     // Arrange
     let xs = fromNotification [ OnNext 1; OnCompleted; OnCompleted]
     let obv = TestObserver<int>()
-    let safeObv = safeObserver obv.OnNotification
+    let safeObv = safeObserver obv.PostAsync
 
     // Act
     let! dispose = xs safeObv
@@ -112,7 +112,7 @@ let ``Test safe observer stops after error``() = toTask <| async {
     let error = MyError "error"
     let xs = fromNotification [ OnNext 1; OnError error; OnNext 2]
     let obv = TestObserver<int>()
-    let safeObv = safeObserver obv.OnNotification
+    let safeObv = safeObserver obv.PostAsync
 
     // Act
     let! dispose = xs safeObv
@@ -134,7 +134,7 @@ let ``Test safe observer stops after error error``() = toTask <| async {
     let error = MyError "error"
     let xs = fromNotification [ OnNext 1; OnError error; OnError error]
     let obv = TestObserver<int>()
-    let safeObv = safeObserver obv.OnNotification
+    let safeObv = safeObserver obv.PostAsync
 
     // Act
     let! dispose = xs safeObv

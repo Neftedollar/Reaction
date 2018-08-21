@@ -61,8 +61,8 @@ module AsyncObservable =
     let fail ex : AsyncObservable<'a> =
         AsyncObservable <| Creation.fail ex
 
-    let just (x : 'a) : AsyncObservable<'a> =
-        AsyncObservable <| Creation.just x
+    let single (x : 'a) : AsyncObservable<'a> =
+        AsyncObservable <| Creation.single x
 
     let delay msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source |>  Timeshift.delay msecs |> AsyncObservable
@@ -93,6 +93,15 @@ module AsyncObservable =
             |> Combine.concat
             |> AsyncObservable
 
+    let flatMap (mapper:'a -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
+        let mapperUnwrapped p : Types.AsyncObservable<'b> =
+            let result = mapper p
+            AsyncObservable.Unwrap result
+
+        AsyncObservable.Unwrap source
+            |> Transform.flatMap mapperUnwrapped
+            |> AsyncObservable
+
     let flatMapi (mapper:'a*int -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         let mapperUnwrapped p : Types.AsyncObservable<'b> =
             let result = mapper p
@@ -100,6 +109,15 @@ module AsyncObservable =
 
         AsyncObservable.Unwrap source
             |> Transform.flatMapi mapperUnwrapped
+            |> AsyncObservable
+
+    let flatMapAsync (mapper:'a -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
+        let mapperUnwrapped p : Async<Types.AsyncObservable<'b>> = async {
+            let! result = mapper p
+            return AsyncObservable.Unwrap result
+        }
+        AsyncObservable.Unwrap source
+            |> Transform.flatMapAsync mapperUnwrapped
             |> AsyncObservable
 
     let flatMapiAsync (mapper:'a*int -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
@@ -111,7 +129,12 @@ module AsyncObservable =
             |> Transform.flatMapiAsync mapperUnwrapped
             |> AsyncObservable
 
-    let filter (predicate: 'a -> Async<bool>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+    let filter (predicate: 'a -> bool) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+        AsyncObservable.Unwrap source
+            |> Filter.filter predicate
+            |> AsyncObservable
+
+    let filterAsync (predicate: 'a -> Async<bool>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
             |> Filter.filterAsync predicate
             |> AsyncObservable

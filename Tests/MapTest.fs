@@ -18,11 +18,11 @@ let ``Test map async``() = toTask <| async {
             return x * 10
         }
 
-    let xs = just 42 |> mapAsync mapper
+    let xs = single 42 |> mapAsync mapper
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.OnNotification
+    let! sub = xs.SubscribeAsync obv.PostAsync
     let! latest= obv.Await ()
 
     // Assert
@@ -39,11 +39,11 @@ let ``Test map sync``() = toTask <| async {
     let mapper x =
         x * 10
 
-    let xs = just 42 |> map mapper
+    let xs = single 42 |> map mapper
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.OnNotification
+    let! sub = xs.SubscribeAsync obv.PostAsync
     let! latest= obv.Await ()
 
     // Assert
@@ -65,11 +65,11 @@ let ``Test map mapper throws exception``() = toTask <| async {
             raise error
         }
 
-    let xs = just "error" |> mapAsync mapper
+    let xs = single "error" |> mapAsync mapper
     let obv = TestObserver<unit>()
 
     // Act
-    let! cnl = xs.SubscribeAsync obv.OnNotification
+    let! cnl = xs.SubscribeAsync obv.PostAsync
 
     try
         do! obv.AwaitIgnore ()

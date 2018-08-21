@@ -7,21 +7,21 @@ open ReAction.Query
 
 open NUnit.Framework
 open FsUnit
+
 open Tests.Utils
-open NUnit.Framework
 
 let toTask computation : Task = Async.StartAsTask computation :> _
 
 [<Test>]
 let ``test query empty`` () = toTask <| async {
     // Arrange
-    let xs = asyncReact {
+    let xs = reaction {
         ()
     }
     let obv = TestObserver<unit>()
 
     // Act
-    let! dispose = xs obv.OnNotification
+    let! dispose = xs.SubscribeAsync obv.PostAsync
 
     // Assert
     try
@@ -35,32 +35,24 @@ let ``test query empty`` () = toTask <| async {
     Assert.That(actual, Is.EquivalentTo(expected))
 }
 
-
 [<Test>]
-let ``test query map`` () =
-    let mapper x =
-        async {
-            return x * 10
-        }
+let ``test query let!`` () = toTask <| async {
+    // Arrange
+    let obv = TestObserver<int>()
 
-    let xs = ofSeq <| seq { 1 .. 5 }
-    let ys = asyncReact {
-        //let! n = ofSeq <| seq { 1 .. 5 }
-        ()
+    let xs = reaction {
+        let! a = seq [1; 2] |> ofSeq
+        let! b = seq [3; 4] |> ofSeq
+
+        yield a + b
     }
 
-    let obv n =
-        async {
-            match n with
-            | OnNext x -> printfn "%A" x
-            | OnError ex -> printfn "OnError: %s." <| ex.ToString()
-            | OnCompleted -> printfn "OnCompleted."
-        }
+    // Act
+    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! latest = obv.Await ()
 
-    let main =
-        async {
-            let! subscription = xs obv
-            do! subscription ()
-        }
-
-    main |> Async.Start
+    // Assert
+    let actual = obv.Notifications |> Seq.toList
+    let expected : Notification<int> list = [ OnNext 4; OnNext 5; OnNext 5; OnNext 6; OnCompleted ]
+    Assert.That(actual, Is.EquivalentTo(expected))
+}

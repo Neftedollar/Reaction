@@ -15,7 +15,7 @@ type TestObserver<'a>() =
 
     member this.Notifications = notifications
 
-    member this.OnNotification (n : Notification<'a>) =
+    member this.PostAsync (n : Notification<'a>) =
         async {
             printfn "TestObserver %A" n
 

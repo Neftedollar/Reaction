@@ -18,7 +18,7 @@ module Core =
 
     let canceller () =
         let cancellationSource = new CancellationTokenSource()
-        let cancel() = async {
+        let cancel () = async {
             cancellationSource.Cancel()
             ()
         }
@@ -63,7 +63,7 @@ module Core =
     let refCountAgent initial action =
         MailboxProcessor.Start(fun inbox ->
             let rec messageLoop count = async {
-                let! cmd = inbox.Receive()
+                let! cmd = inbox.Receive ()
                 let newCount =
                     match cmd with
                     | Increase -> count + 1

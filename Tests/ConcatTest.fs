@@ -19,7 +19,7 @@ let ``Test concat emtpy empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.OnNotification
+    let! sub = zs.SubscribeAsync obv.PostAsync
     try
         do! obv.AwaitIgnore ()
     with
@@ -41,7 +41,7 @@ let ``Test concat non emtpy empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.OnNotification
+    let! sub = zs.SubscribeAsync obv.PostAsync
     let! result = obv.Await ()
 
     // Assert
@@ -61,7 +61,7 @@ let ``Test concat empty non empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.OnNotification
+    let! sub = zs.SubscribeAsync obv.PostAsync
     let! result = obv.Await ()
 
     // Assert
@@ -81,7 +81,7 @@ let ``Test concat two``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.OnNotification
+    let! sub = zs.SubscribeAsync obv.PostAsync
     let! result = obv.Await ()
 
     // Assert
@@ -101,7 +101,7 @@ let ``Test concat +``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.OnNotification
+    let! sub = zs obv.PostAsync
     let! result = obv.Await ()
 
     // Assert
@@ -122,7 +122,7 @@ let ``Test concat three``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.OnNotification
+    let! sub = xs.SubscribeAsync obv.PostAsync
     let! result = obv.Await ()
 
     // Assert
@@ -145,7 +145,7 @@ let ``Test concat fail with non emtpy ``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.OnNotification
+    let! sub = zs.SubscribeAsync obv.PostAsync
     try
         do! obv.AwaitIgnore ()
     with

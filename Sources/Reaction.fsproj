@@ -18,10 +18,10 @@
     <Compile Include="Combine.fs" />
     <Compile Include="Transform.fs" />
     <Compile Include="Timeshift.fs" />
-    <Compile Include="Query.fs" />
     <Compile Include="AsyncDisposable.fs" />
     <Compile Include="AsyncObserver.fs" />
     <Compile Include="AsyncObservable.fs" />
+    <Compile Include="Query.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="*.fsproj; *.fs" PackagePath="fable\" />

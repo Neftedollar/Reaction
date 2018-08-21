@@ -19,11 +19,11 @@ let ``Test filter``() = toTask <| async {
             return x < 3
         }
 
-    let xs = ofSeq <| seq { 1..5 } |> filter predicate
+    let xs = ofSeq <| seq { 1..5 } |> filterAsync predicate
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.OnNotification
+    let! sub = xs.SubscribeAsync obv.PostAsync
     let! result = obv.Await ()
 
     // Assert
@@ -46,11 +46,11 @@ let ``Test filter predicate throws exception``() = toTask <| async {
             return true
         }
 
-    let xs = ofSeq <| seq { 1..5 } |> filter predicate
+    let xs = ofSeq <| seq { 1..5 } |> filterAsync predicate
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.OnNotification
+    let! sub = xs.SubscribeAsync obv.PostAsync
 
     try
         do! obv.AwaitIgnore ()

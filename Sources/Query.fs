@@ -1,19 +1,15 @@
 module ReAction.Query
 
-open Types
+open ReAction
 
-type QueryBuiler() =
-    member this.Zero() = Creation.empty ()
+type QueryBuilder() =
+    member this.Zero() = empty ()
 
-    member this.ReturnFrom (x) = Creation.just x
+    member this.YieldFrom (x) : AsyncObservable<_> = x
 
-    member __.Bind(m: AsyncObservable<_>, f: _ -> AsyncObservable<_>) = Transform.flatMap f
+    member this.Yield (x : 'a) : AsyncObservable<_> = single x
 
-    [<CustomOperation("select", AllowIntoPattern=true)>]
-    member this.Select (s:AsyncObservable<_>, [<ProjectionParameter>] selector : _ -> _) = Transform.mapAsync selector
-
-    [<CustomOperation("where", MaintainsVariableSpace=true, AllowIntoPattern=true)>]
-    member this.Where (s:AsyncObservable<_>, [<ProjectionParameter>] predicate : _ -> Async<bool> ) = Filter.filterAsync predicate s
+    member this.Bind(source: AsyncObservable<'a>, fn: 'a -> AsyncObservable<'b>) = flatMap fn source
 
 // Query builder for an async reactive event source
-let asyncReact = new QueryBuiler()
+let reaction = new QueryBuilder()

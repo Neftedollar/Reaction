@@ -14,8 +14,8 @@ module Streams =
             obvs.Add(sobv)
 
             async {
-                let cancel() = async {
-                    obvs.Remove(sobv)|> ignore
+                let cancel () = async {
+                    obvs.Remove sobv |> ignore
                 }
                 return cancel
             }

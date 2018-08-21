@@ -44,7 +44,7 @@ module Creation =
             do! OnCompleted |> obv
         })
 
-    let inline just (x : 'a) : AsyncObservable<'a> =
+    let inline single (x : 'a) : AsyncObservable<'a> =
         ofSeq [ x ]
 
     // Create an async observable from a subscribe function. So trivial

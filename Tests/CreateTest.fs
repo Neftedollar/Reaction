@@ -11,13 +11,13 @@ open Tests.Utils
 let toTask computation : Task = Async.StartAsTask computation :> _
 
 [<Test>]
-let ``Test just happy``() = toTask <| async {
+let ``Test single happy``() = toTask <| async {
     // Arrange
-    let xs = AsyncObservable.just 42
+    let xs = single 42
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs.SubscribeAsync obv.OnNotification
+    let! dispose = xs.SubscribeAsync obv.PostAsync
 
     // Assert
     let! latest = obv.Await ()
@@ -31,11 +31,11 @@ let ``Test just happy``() = toTask <| async {
 [<Test>]
 let ``Test just dispose after subscribe``() = toTask <| async {
     // Arrange
-    let xs = just 42
+    let xs = single 42
     let obv = TestObserver<int>()
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.OnNotification
+    let! subscription = xs.SubscribeAsync obv.PostAsync
     Async.StartImmediate (subscription.DisposeAsync ())
 
     // Assert
@@ -51,7 +51,7 @@ let ``Test ofSeq empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs.SubscribeAsync obv.OnNotification
+    let! dispose = xs.SubscribeAsync obv.PostAsync
 
     do! obv.AwaitIgnore ()
 
@@ -69,7 +69,7 @@ let ``Test ofSeq non empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs.SubscribeAsync obv.OnNotification
+    let! dispose = xs.SubscribeAsync obv.PostAsync
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -86,7 +86,7 @@ let ``Test ofSeq dispose after subscribe``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.OnNotification
+    let! subscription = xs.SubscribeAsync obv.PostAsync
     do! subscription.DisposeAsync ()
 
     // Assert
