@@ -120,8 +120,8 @@ module Combine =
     | Source of Notification<'a>
     | Other of Notification<'b>
 
-    let combineLatest (other : AsyncObservable<'b>) (mapper : 'a -> 'b -> 'c) (source : AsyncObservable<'a>) : AsyncObservable<'c> =
-        let subscribe (aobv : AsyncObserver<'c>) =
+    let combineLatest (other : AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+        let subscribe (aobv : AsyncObserver<'a*'b>) =
             let safeObserver = safeObserver aobv
 
             let agent = MailboxProcessor.Start(fun inbox ->
@@ -150,7 +150,7 @@ module Combine =
                             let! onNextOptionN = onNextOption n
                             return source, onNextOptionN
                     }
-                    let c = source' |> Option.bind (fun a -> other' |> Option.map  (fun b -> mapper a b))
+                    let c = source' |> Option.bind (fun a -> other' |> Option.map  (fun b -> a, b))
                     match c with
                     | Some x -> do! OnNext x |> safeObserver
                     | _ -> ()
@@ -169,8 +169,8 @@ module Combine =
             }
         subscribe
 
-    let withLatestFrom (other : AsyncObservable<'b>) (mapper : 'a -> 'b -> 'c) (source : AsyncObservable<'a>) : AsyncObservable<'c> =
-        let subscribe (aobv : AsyncObserver<'c>) =
+    let withLatestFrom (other : AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+        let subscribe (aobv : AsyncObserver<'a*'b>) =
             let safeObserver = safeObserver aobv
 
             let agent = MailboxProcessor.Start(fun inbox ->
@@ -199,7 +199,7 @@ module Combine =
                             let! onNextOptionN = onNextOption n
                             return None, onNextOptionN
                     }
-                    let c = source' |> Option.bind (fun a -> latest' |> Option.map  (fun b -> mapper a b))
+                    let c = source' |> Option.bind (fun a -> latest' |> Option.map  (fun b -> a, b))
                     match c with
                     | Some x -> do! OnNext x |> safeObserver
                     | _ -> ()
