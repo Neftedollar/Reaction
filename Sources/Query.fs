@@ -11,5 +11,7 @@ type QueryBuilder() =
 
     member this.Bind(source: AsyncObservable<'a>, fn: 'a -> AsyncObservable<'b>) = flatMap fn source
 
+    member x.For(source:AsyncObservable<_>, func) = flatMap func source
+
 // Query builder for an async reactive event source
 let reaction = new QueryBuilder()
