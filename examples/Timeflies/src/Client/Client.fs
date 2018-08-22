@@ -3,8 +3,9 @@ module Client
 open Fable.Helpers.React
 open Fable.Helpers.React.Props
 
-open ReAction
-open Fable.ReAction
+open Reaction
+open Reaction.Query
+open Fable.Reaction
 
 // The model holds data that you want to keep track of while the application is running
 // in this case, we are keeping track of a counter
@@ -38,21 +39,28 @@ let view (model : Model) =
             ]
     ]
 
+let indexedChars =
+    Seq.toList "TIME FLIES LIKE AN ARROW"
+    |> Seq.mapi (fun i x -> string x, i)
+
 let main = async {
     let initialModel = { Letters = Map.empty }
 
-    let moves =
-        Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.map string |> from
-            |> flatMapi (fun (x, i) ->
-                fromMouseMoves ()
-                    |> map (fun m -> Letter (i, x, int m.clientX, int m.clientY))
-                    |> delay (100 * i)
-            )
-            |> scan initialModel update
-            |> map view
+    let msgs = react {
+        let! c, i = indexedChars |> ofSeq
+
+        let ms = fromMouseMoves () |> delay (100 * i)
+        for m in ms do
+            yield Letter (i, c, int m.clientX, int m.clientY)
+    }
+
+    let elems =
+        msgs
+        |> scan initialModel update
+        |> map view
 
     let obv = renderReact "elmish-app"
-    do! moves.RunAsync obv
+    do! elems.RunAsync obv
 }
 
 main |> Async.StartImmediate

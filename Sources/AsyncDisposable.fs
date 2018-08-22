@@ -1,4 +1,4 @@
-namespace ReAction
+namespace Reaction
 
 type AsyncDisposable = AsyncDisposable of Types.AsyncDisposable with
         static member Unwrap (AsyncDisposable dsp) : Types.AsyncDisposable = dsp

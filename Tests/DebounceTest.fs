@@ -2,7 +2,7 @@ module Tests.Debounce
 
 open System.Threading.Tasks
 
-open ReAction
+open Reaction
 
 open NUnit.Framework
 open FsUnit

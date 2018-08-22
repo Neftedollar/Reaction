@@ -1,4 +1,4 @@
-namespace ReAction
+namespace Reaction
 
 type Notification<'a> =
     | OnNext of 'a

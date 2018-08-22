@@ -3,7 +3,7 @@ module Tests.Filter
 open System
 open System.Threading.Tasks
 
-open ReAction
+open Reaction
 
 open NUnit.Framework
 open FsUnit

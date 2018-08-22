@@ -1,6 +1,6 @@
-module ReAction.Query
+module Reaction.Query
 
-open ReAction
+open Reaction
 
 type QueryBuilder() =
     member this.Zero() = empty ()

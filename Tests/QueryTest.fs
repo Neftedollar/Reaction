@@ -2,8 +2,8 @@ module Tests.Query
 
 open System.Threading.Tasks
 
-open ReAction
-open ReAction.Query
+open Reaction
+open Reaction.Query
 
 open NUnit.Framework
 open FsUnit

@@ -1,4 +1,4 @@
-namespace ReAction
+namespace Reaction
 
 [<AutoOpen>]
 module AsyncObservable =

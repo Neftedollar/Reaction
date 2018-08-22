@@ -1,10 +1,10 @@
 // TODO: move to a separate project (assembly)
 
-namespace Fable.ReAction
+namespace Fable.Reaction
 
 open Fable.Import.Browser
 
-open ReAction
+open Reaction
 
 [<AutoOpen>]
 module Fable =

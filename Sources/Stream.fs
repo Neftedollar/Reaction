@@ -1,4 +1,4 @@
-namespace ReAction
+namespace Reaction
 
 open System.Collections.Generic
 open Types

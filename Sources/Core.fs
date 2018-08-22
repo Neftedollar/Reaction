@@ -1,4 +1,4 @@
-namespace ReAction
+namespace Reaction
 
 open System.Threading
 open Types
