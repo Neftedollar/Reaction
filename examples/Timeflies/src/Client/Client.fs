@@ -46,7 +46,7 @@ let indexedChars =
 let main = async {
     let initialModel = { Letters = Map.empty }
 
-    let msgs = react {
+    let msgs = reac {
         let! c, i = indexedChars |> ofSeq
 
         let ms = fromMouseMoves () |> delay (100 * i)

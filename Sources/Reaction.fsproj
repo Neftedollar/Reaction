@@ -3,9 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Reaction</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>Dag Brattli</Authors>
-    <Company>Dag Labs</Company>
+    <Company>Brattli Labs</Company>
   </PropertyGroup>
 
   <ItemGroup>

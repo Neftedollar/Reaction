@@ -13,9 +13,9 @@ open Tests.Utils
 let toTask computation : Task = Async.StartAsTask computation :> _
 
 [<Test>]
-let ``test query empty`` () = toTask <| async {
+let ``test empty query`` () = toTask <| async {
     // Arrange
-    let xs = reaction {
+    let xs = reac {
         ()
     }
     let obv = TestObserver<unit>()
@@ -40,7 +40,7 @@ let ``test query let!`` () = toTask <| async {
     // Arrange
     let obv = TestObserver<int>()
 
-    let xs = reaction {
+    let xs = reac {
         let! a = seq [1; 2] |> ofSeq
         let! b = seq [3; 4] |> ofSeq
 
