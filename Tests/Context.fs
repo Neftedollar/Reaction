@@ -6,7 +6,7 @@ open System.Threading;
 open System.Threading.Tasks
 
 // A single thread test synchronization context.
-// https://blogs.msdn.microsoft.com/pfxteam/2012/01/20/await-synchronizationcontext-and-console-apps/
+// Inspored by: https://blogs.msdn.microsoft.com/pfxteam/2012/01/20/await-synchronizationcontext-and-console-apps/
 type TestSynchronizationContext () =
     inherit SynchronizationContext ()
 
