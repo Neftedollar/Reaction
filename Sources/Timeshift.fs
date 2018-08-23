@@ -12,10 +12,10 @@ module Timeshift =
                 let rec messageLoop state = async {
                     let! n, dueTime = inbox.Receive()
 
-                    let diff : TimeSpan = dueTime - DateTime.Now
+                    let diff : TimeSpan = dueTime - ReactionContext.Now
                     let msecs = Convert.ToInt32 diff.TotalMilliseconds
                     if msecs > 0 then
-                        do! SleepAsync msecs
+                        do! ReactionContext.SleepAsync msecs
                     do! aobv n
 
                     return! messageLoop state
@@ -27,7 +27,7 @@ module Timeshift =
             async {
                 let obv n =
                     async {
-                        let dueTime = DateTime.Now + TimeSpan.FromMilliseconds(float msecs)
+                        let dueTime = ReactionContext.Now + TimeSpan.FromMilliseconds(float msecs)
                         agent.Post (n, dueTime)
                     }
                 return! source obv
@@ -74,7 +74,7 @@ module Timeshift =
                         agent.Post (n, index)
 
                         let worker = async {
-                            do! SleepAsync msecs
+                            do! ReactionContext.SleepAsync msecs
                             agent.Post (n, index)
                         }
 

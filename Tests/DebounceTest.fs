@@ -3,6 +3,7 @@ module Tests.Debounce
 open System.Threading.Tasks
 
 open Reaction
+open Test.Reaction.Context
 
 open NUnit.Framework
 open FsUnit
@@ -21,7 +22,7 @@ let ``Test debounce single value``() = toTask <| async {
     // Act
     let! sub = xs.SubscribeAsync (obv.PostAsync)
     do! dispatch.OnNextAsync 42
-    do! SleepAsync 150
+    do! ReactionContext.SleepAsync 150
     do! dispatch.OnCompletedAsync ()
     let! latest= obv.Await ()
 
@@ -45,7 +46,7 @@ let ``Test debounce two immediate values``() = toTask <| async {
     let! sub = xs.SubscribeAsync obv.PostAsync
     do! dispatch.OnNextAsync 42
     do! dispatch.OnNextAsync 43
-    do! SleepAsync 150
+    do! ReactionContext.SleepAsync 150
     do! dispatch.OnCompletedAsync ()
     let! latest= obv.Await ()
 
@@ -60,19 +61,23 @@ let ``Test debounce two immediate values``() = toTask <| async {
 [<Test>]
 let ``Test debounce two separate values``() = toTask <| async {
     // Arrange
-
     let dispatch, obs = stream ()
     let xs = obs |> debounce 100
     let obv = TestObserver<int>()
+    let ctx = TestSynchronizationContext ()
+
+    let task = async {
+        do! dispatch.OnNextAsync 42
+        do! ReactionContext.SleepAsync 150
+        do! dispatch.OnNextAsync 43
+        do! ReactionContext.SleepAsync 150
+        do! dispatch.OnCompletedAsync ()
+    }
 
     // Act
     let! sub = xs.SubscribeAsync obv.PostAsync
-    do! dispatch.OnNextAsync 42
-    do! SleepAsync 150
-    do! dispatch.OnNextAsync 43
-    do! SleepAsync 150
-    do! dispatch.OnCompletedAsync ()
-    let! latest= obv.Await ()
+    do! ctx.RunAsync task
+    let! latest = obv.Await ()
 
     // Assert
     latest |> should equal 43

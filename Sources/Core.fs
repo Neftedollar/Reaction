@@ -85,18 +85,23 @@ module Context =
     type IReactionTime =
        abstract member SleepAsync : int -> Async<unit>
 
-       abstract member Now : DateTime with get, set
+       abstract member Now : DateTime
 
-    type ReactionSC () =
-        static let instance : IReactionTime = ReactionSC() :> IReactionTime
+    type ReactionContext () =
+        static let instance : IReactionTime = ReactionContext () :> IReactionTime
         static member val Current = instance with get, set
 
         interface IReactionTime with
             member this.SleepAsync msecs =
                 Async.Sleep msecs
 
-            member this.Now
-                with get() = DateTime.Now
-                and set(value) = failwith "Cannot set real time"
+            member this.Now =
+                printfn "DateTime.Now %A" DateTime.Now
+                DateTime.Now
 
-    let SleepAsync = ReactionSC.Current.SleepAsync
+
+        static member SleepAsync = ReactionContext.Current.SleepAsync
+
+        static member Now = ReactionContext.Current.Now
+
+        static member Reset () = ReactionContext.Current <- instance

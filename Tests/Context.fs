@@ -14,14 +14,14 @@ type TestSynchronizationContext () =
 
     let mutable delayed : List<DateTime*SendOrPostCallback*Object> = List.empty
     let ready = new BlockingCollection<SendOrPostCallback*Object> ()
-    let now = DateTime.Now
+    let mutable now = DateTime.Now
 
     member val private Delayed = delayed with get, set
     member val private Running = false with get, set
     member private this.Ready = ready
 
     interface IReactionTime with
-        member val Now = now with get, set
+        member this.Now = now
 
         member this.SleepAsync (msecs: int) =
             //printfn "SleepAsync: %d" msecs
@@ -32,7 +32,7 @@ type TestSynchronizationContext () =
 
             async {
                 let timeout = TimeSpan.FromMilliseconds (float msecs)
-                let dueTime = (this :> IReactionTime).Now + timeout
+                let dueTime = now + timeout
 
                 lock this.Delayed (fun () ->
                     let workItem = (dueTime, SendOrPostCallback action, null) :: this.Delayed
@@ -41,8 +41,6 @@ type TestSynchronizationContext () =
 
                 return! Async.AwaitTask task.Task
             }
-
-
 
     override this.Post(d : SendOrPostCallback, state: Object) =
         printfn "Post %A" d
@@ -59,7 +57,7 @@ type TestSynchronizationContext () =
                 | (x, y, z) :: rest ->
                     this.Ready.Add ((y, z))
                     this.Delayed <- rest
-                    (this :> IReactionTime).Now <- x
+                    now <- x
                 | [] -> ()
             )
 
@@ -82,31 +80,32 @@ type TestSynchronizationContext () =
     member this.RunAsync(func: Async<unit>) = async {
         let cts = new CancellationTokenSource ()
         let prevCtx = SynchronizationContext.Current
+
         do! Async.SwitchToContext this
 
         this.Running <- true
-
-        ReactionSC.Current <- this
-
-        Async.StartWithContinuations(
-            func,
-            (fun cont ->
-                printfn "cont-%A" cont
-                this.Ready.CompleteAdding ()),
-            (fun exn ->
-                this.Ready.CompleteAdding ()
-                printfn "exception-%s" <| exn.ToString()),
-            (fun exn ->
-                this.Ready.CompleteAdding ()
-                printfn "cancell-%s" <| exn.ToString()),
-             cts.Token
-        )
+        ReactionContext.Current <- this
 
         try
+            Async.StartWithContinuations(
+                func,
+                (fun cont ->
+                    printfn "cont-%A" cont
+                    this.Ready.CompleteAdding ()),
+                (fun exn ->
+                    this.Ready.CompleteAdding ()
+                    printfn "exception-%s" <| exn.ToString()),
+                (fun exn ->
+                    this.Ready.CompleteAdding ()
+                    printfn "cancell-%s" <| exn.ToString()),
+                 cts.Token
+            )
+
             this.ProcessReady ()
         with
         | exn -> printfn "Exception-%s" <| exn.ToString ()
 
+        ReactionContext.Reset ()
         this.Running <- false
         do! Async.SwitchToContext prevCtx
 }

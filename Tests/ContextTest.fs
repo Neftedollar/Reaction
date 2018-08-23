@@ -36,7 +36,7 @@ let test_scheduler2 () = toTask <| async {
     let mutable ran = false
 
     let task = async {
-        do! SleepAsync 100
+        do! ReactionContext.SleepAsync 100
         ran <- true
     }
     // Act
