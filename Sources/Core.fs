@@ -1,5 +1,6 @@
 namespace Reaction
 
+open System
 open System.Threading
 open Types
 
@@ -78,3 +79,24 @@ module Core =
 
             messageLoop initial
         )
+
+[<AutoOpen>]
+module Context =
+    type IReactionTime =
+       abstract member SleepAsync : int -> Async<unit>
+
+       abstract member Now : DateTime with get, set
+
+    type ReactionSC () =
+        static let instance : IReactionTime = ReactionSC() :> IReactionTime
+        static member val Current = instance with get, set
+
+        interface IReactionTime with
+            member this.SleepAsync msecs =
+                Async.Sleep msecs
+
+            member this.Now
+                with get() = DateTime.Now
+                and set(value) = failwith "Cannot set real time"
+
+    let SleepAsync = ReactionSC.Current.SleepAsync

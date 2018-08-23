@@ -15,7 +15,7 @@ module Timeshift =
                     let diff : TimeSpan = dueTime - DateTime.Now
                     let msecs = Convert.ToInt32 diff.TotalMilliseconds
                     if msecs > 0 then
-                        do! Async.Sleep msecs
+                        do! SleepAsync msecs
                     do! aobv n
 
                     return! messageLoop state
@@ -74,7 +74,7 @@ module Timeshift =
                         agent.Post (n, index)
 
                         let worker = async {
-                            do! Async.Sleep msecs
+                            do! SleepAsync msecs
                             agent.Post (n, index)
                         }
 

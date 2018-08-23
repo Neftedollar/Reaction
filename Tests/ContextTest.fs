@@ -7,7 +7,8 @@ open System.Threading.Tasks
 open NUnit.Framework
 open FsUnit
 
-open Reaction.Context
+open Reaction
+open Test.Reaction.Context
 
 let toTask computation : Task = Async.StartAsTask computation :> _
 
@@ -35,7 +36,7 @@ let test_scheduler2 () = toTask <| async {
     let mutable ran = false
 
     let task = async {
-        do! ctx.SleepAsync 100
+        do! SleepAsync 100
         ran <- true
     }
     // Act

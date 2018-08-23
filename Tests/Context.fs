@@ -1,9 +1,11 @@
-module Reaction.Context
+module Test.Reaction.Context
 
 open System
 open System.Collections.Concurrent
 open System.Threading;
 open System.Threading.Tasks
+
+open Reaction
 
 // A single thread test synchronization context.
 // Inspired by: https://blogs.msdn.microsoft.com/pfxteam/2012/01/20/await-synchronizationcontext-and-console-apps/
@@ -18,26 +20,29 @@ type TestSynchronizationContext () =
     member val private Running = false with get, set
     member private this.Ready = ready
 
-    member val Now = now with get, set
+    interface IReactionTime with
+        member val Now = now with get, set
 
-    member this.SleepAsync (msecs: int) =
-        printfn "SleepAsync: %d" msecs
-        let task = new TaskCompletionSource<unit> ()
+        member this.SleepAsync (msecs: int) =
+            //printfn "SleepAsync: %d" msecs
+            let task = new TaskCompletionSource<unit> ()
 
-        let action (_ : Object) =
-            task.SetResult ()
+            let action (_ : Object) =
+                task.SetResult ()
 
-        async {
-            let timeout = TimeSpan.FromMilliseconds (float msecs)
-            let dueTime = this.Now + timeout
+            async {
+                let timeout = TimeSpan.FromMilliseconds (float msecs)
+                let dueTime = (this :> IReactionTime).Now + timeout
 
-            lock this.Delayed (fun () ->
-                let workItem = (dueTime, SendOrPostCallback action, null) :: this.Delayed
-                this.Delayed <- List.sortBy (fun (x, _, _) -> x) workItem
-            )
+                lock this.Delayed (fun () ->
+                    let workItem = (dueTime, SendOrPostCallback action, null) :: this.Delayed
+                    this.Delayed <- List.sortBy (fun (x, _, _) -> x) workItem
+                )
 
-            return! Async.AwaitTask task.Task
-        }
+                return! Async.AwaitTask task.Task
+            }
+
+
 
     override this.Post(d : SendOrPostCallback, state: Object) =
         printfn "Post %A" d
@@ -54,7 +59,7 @@ type TestSynchronizationContext () =
                 | (x, y, z) :: rest ->
                     this.Ready.Add ((y, z))
                     this.Delayed <- rest
-                    this.Now <- x
+                    (this :> IReactionTime).Now <- x
                 | [] -> ()
             )
 
@@ -80,6 +85,8 @@ type TestSynchronizationContext () =
         do! Async.SwitchToContext this
 
         this.Running <- true
+
+        ReactionSC.Current <- this
 
         Async.StartWithContinuations(
             func,
