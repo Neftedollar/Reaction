@@ -15,6 +15,7 @@ type TestSynchronizationContext () =
     let mutable delayed : List<DateTime*SendOrPostCallback*Object> = List.empty
     let ready = new BlockingCollection<SendOrPostCallback*Object> ()
     let mutable now = DateTime.Now
+    let gate = Object ()
 
     member val private Delayed = delayed with get, set
     member val private Running = false with get, set
@@ -34,10 +35,15 @@ type TestSynchronizationContext () =
                 let timeout = TimeSpan.FromMilliseconds (float msecs)
                 let dueTime = now + timeout
 
-                lock this.Delayed (fun () ->
+                lock gate (fun () ->
                     let workItem = (dueTime, SendOrPostCallback action, null) :: this.Delayed
                     this.Delayed <- List.sortBy (fun (x, _, _) -> x) workItem
                 )
+
+                if this.Ready.IsAddingCompleted then
+                    task.SetResult ()
+                else
+                    this.ProcessDelayed ()
 
                 return! Async.AwaitTask task.Task
             }
@@ -51,8 +57,8 @@ type TestSynchronizationContext () =
 
     /// Process delayed tasks and advances time
     member private this.ProcessDelayed () =
-        if this.Ready.Count = 0 then
-            lock this.Delayed (fun () ->
+        lock gate (fun () ->
+            if this.Ready.Count = 0 then
                 match this.Delayed with
                 | (x, y, z) :: rest ->
                     this.Ready.Add ((y, z))
@@ -86,21 +92,21 @@ type TestSynchronizationContext () =
         this.Running <- true
         ReactionContext.Current <- this
 
-        try
-            Async.StartWithContinuations(
-                func,
-                (fun cont ->
-                    printfn "cont-%A" cont
-                    this.Ready.CompleteAdding ()),
-                (fun exn ->
-                    this.Ready.CompleteAdding ()
-                    printfn "exception-%s" <| exn.ToString()),
-                (fun exn ->
-                    this.Ready.CompleteAdding ()
-                    printfn "cancell-%s" <| exn.ToString()),
-                 cts.Token
+        Async.StartWithContinuations(
+            func,
+            (fun cont ->
+                printfn "cont-%A" cont
+                this.Ready.CompleteAdding ()),
+            (fun exn ->
+                this.Ready.CompleteAdding ()
+                printfn "exception-%s" <| exn.ToString()),
+            (fun exn ->
+                this.Ready.CompleteAdding ()
+                printfn "cancell-%s" <| exn.ToString()),
+                cts.Token
             )
 
+        try
             this.ProcessReady ()
         with
         | exn -> printfn "Exception-%s" <| exn.ToString ()
