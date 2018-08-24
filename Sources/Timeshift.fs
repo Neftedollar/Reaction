@@ -78,8 +78,7 @@ module Timeshift =
                             agent.Post (n, index)
                         }
 
-                        let! _ = Async.StartChild worker
-                        ()
+                        Async.StartImmediate worker
                     }
                 let! dispose = source obv
 

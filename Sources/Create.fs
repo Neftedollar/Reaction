@@ -13,7 +13,7 @@ module Creation =
             let obv = Core.safeObserver aobv
 
             async {
-                let! _ = Async.StartChild (worker obv token, 0)
+                Async.StartImmediate (worker obv token)
                 return cancel
             }
         subscribe
