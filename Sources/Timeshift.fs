@@ -53,7 +53,6 @@ module Timeshift =
                                 return index
                             else
                                 return currentIndex
-
                         | _, _ ->
                             do! safeObserver n
                             return currentIndex
