@@ -40,27 +40,27 @@ let view (model : Model) =
     ]
 
 let indexedChars =
-    Seq.toList "TIME FLIES LIKE AN ARROW"
-    |> Seq.mapi (fun i x -> string x, i)
+    let infinite = Seq.initInfinite (fun x -> x)
+    Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.zip infinite
 
 let main = async {
     let initialModel = { Letters = Map.empty }
 
     let msgs = reac {
-        let! c, i = indexedChars |> ofSeq
+        let! i, c = indexedChars |> ofSeq
 
         let ms = fromMouseMoves () |> delay (100 * i)
         for m in ms do
-            yield Letter (i, c, int m.clientX, int m.clientY)
+            yield Letter (i, string c, int m.clientX, int m.clientY)
     }
 
-    let elems =
+    let elmish =
         msgs
         |> scan initialModel update
         |> map view
 
     let obv = renderReact "elmish-app"
-    do! elems.RunAsync obv
+    do! elmish.RunAsync obv
 }
 
 main |> Async.StartImmediate
