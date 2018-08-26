@@ -28,14 +28,7 @@ module Transform =
 
     // The classic map (select) operator with an indexed and async mapper
     let mapiAsync (mapper : 'a*int -> Async<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        let infinite = Seq.initInfinite (fun index -> index)
-        let indexer = infinite.GetEnumerator ()
-
-        mapAsync (fun x -> async {
-                    indexer.MoveNext () |> ignore
-                    let index = indexer.Current
-                    return! mapper (x, index)
-                  }) source
+        source |> Combine.zipSeq infinite |> mapAsync mapper
 
     // The classic map (select) operator with sync and indexed mapper
     let inline mapi (mapper : 'a*int -> 'b) (source : AsyncObservable<'a>) : AsyncObservable<'b> =

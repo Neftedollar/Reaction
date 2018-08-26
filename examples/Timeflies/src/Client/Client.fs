@@ -40,17 +40,15 @@ let view (model : Model) (dispatch : Dispatch<Msg>) =
 let init () : Model =
     { Letters = Map.empty }
 
-let indexedChars =
-    Seq.toList "TIME FLIES LIKE AN ARROW"
-    |> Seq.mapi (fun i x -> string x, i)
+let indexedChars = Seq.toList "TIME FLIES LIKE AN ARROW" |> Seq.zip Core.infinite
 
 // Query for message stream transformation.
 let query msgs = rx {
-    let! c, i = indexedChars |> ofSeq
+    let! i, c = indexedChars |> ofSeq
 
     let ms = fromMouseMoves () |> delay (100 * i)
     for m in ms do
-        yield Letter (i, c, int m.clientX, int m.clientY)
+        yield Letter (i, string c, int m.clientX, int m.clientY)
 }
 
 Program.mkReaction init update view

@@ -36,14 +36,6 @@ module AsyncObservable =
             Combine.concat [ AsyncObservable.Unwrap x; AsyncObservable.Unwrap y]
 
         // FlapMapAsync overload. Note cannot be used by Fable
-        static member (>>=) (source:AsyncObservable<'a>, mapper:'a*int -> Async<AsyncObservable<'b>>) : AsyncObservable<'b> =
-            let mapperUnwrapped p : Async<Types.AsyncObservable<'b>> = async {
-                let! result = mapper p
-                return AsyncObservable.Unwrap result
-            }
-            AsyncObservable.Unwrap source |> Transform.flatMapiAsync mapperUnwrapped |> AsyncObservable
-
-        // FlapMapiAsync overload. Note cannot be used by Fable
         static member (>>=) (source:AsyncObservable<'a>, mapper:'a -> Async<AsyncObservable<'b>>) : AsyncObservable<'b> =
             let mapperUnwrapped p : Async<Types.AsyncObservable<'b>> = async {
                 let! result = mapper p
@@ -51,8 +43,16 @@ module AsyncObservable =
             }
             AsyncObservable.Unwrap source |> Transform.flatMapAsync mapperUnwrapped |> AsyncObservable
 
-    let ofSeq
-     (xs : seq<'a>) : AsyncObservable<'a> =
+    let mapperUnwrapped (mapper : 'a -> AsyncObservable<'b>) a : Types.AsyncObservable<'b> =
+            let result = mapper a
+            AsyncObservable.Unwrap result
+
+    let mapperUnwrappedAsync mapper a : Async<Types.AsyncObservable<'b>> = async {
+        let! result = mapper a
+        return AsyncObservable.Unwrap result
+    }
+
+    let ofSeq (xs : seq<'a>) : AsyncObservable<'a> =
         AsyncObservable <| Creation.ofSeq xs
 
     let empty () : AsyncObservable<'a> =
@@ -94,39 +94,23 @@ module AsyncObservable =
             |> AsyncObservable
 
     let flatMap (mapper:'a -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        let mapperUnwrapped p : Types.AsyncObservable<'b> =
-            let result = mapper p
-            AsyncObservable.Unwrap result
-
         AsyncObservable.Unwrap source
-            |> Transform.flatMap mapperUnwrapped
+            |> Transform.flatMap (mapperUnwrapped mapper)
             |> AsyncObservable
 
     let flatMapi (mapper:'a*int -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        let mapperUnwrapped p : Types.AsyncObservable<'b> =
-            let result = mapper p
-            AsyncObservable.Unwrap result
-
         AsyncObservable.Unwrap source
-            |> Transform.flatMapi mapperUnwrapped
+            |> Transform.flatMapi (mapperUnwrapped mapper)
             |> AsyncObservable
 
     let flatMapAsync (mapper:'a -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        let mapperUnwrapped p : Async<Types.AsyncObservable<'b>> = async {
-            let! result = mapper p
-            return AsyncObservable.Unwrap result
-        }
         AsyncObservable.Unwrap source
-            |> Transform.flatMapAsync mapperUnwrapped
+            |> Transform.flatMapAsync (mapperUnwrappedAsync mapper)
             |> AsyncObservable
 
     let flatMapiAsync (mapper:'a*int -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        let mapperUnwrapped p : Async<Types.AsyncObservable<'b>> = async {
-            let! result = mapper p
-            return AsyncObservable.Unwrap result
-        }
         AsyncObservable.Unwrap source
-            |> Transform.flatMapiAsync mapperUnwrapped
+            |> Transform.flatMapiAsync (mapperUnwrappedAsync mapper)
             |> AsyncObservable
 
     let filter (predicate: 'a -> bool) (source: AsyncObservable<'a>) : AsyncObservable<'a> =

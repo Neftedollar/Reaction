@@ -5,6 +5,8 @@ open System.Threading
 open Types
 
 module Core =
+    let infinite = Seq.initInfinite (fun index -> index)
+
     let disposableEmpty () =
         async {
             return ()

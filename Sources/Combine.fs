@@ -4,7 +4,7 @@ open Types
 open Core
 
 module Combine =
-    // Concatenates an async observable of async observables (WIP)
+    // Concatenates an async observable of async observables
     let concat (sources : seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
@@ -215,5 +215,29 @@ module Combine =
                 let! dispose2 = other (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
 
                 return compositeDisposable [ dispose1; dispose2 ]
+            }
+        subscribe
+
+    let zipSeq (sequence : seq<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+        let subscribe (aobv : AsyncObserver<'a*'b>) =
+            async {
+                let enumerator = sequence.GetEnumerator ()
+                let _obv n =
+                    async {
+                        match n with
+                        | OnNext x ->
+                            try
+                                if enumerator.MoveNext () then
+                                    let b =  x, enumerator.Current
+                                    do! b |> OnNext |> aobv
+                                else
+                                    do! aobv OnCompleted
+                            with
+                            | ex -> do! OnError ex |> aobv
+                        | OnError ex -> do! OnError ex |> aobv
+                        | OnCompleted -> do! aobv OnCompleted
+
+                    }
+                return! _obv |> safeObserver |> source
             }
         subscribe
