@@ -98,7 +98,6 @@ module Context =
                 Async.Sleep msecs
 
             member this.Now =
-                printfn "DateTime.Now %A" DateTime.Now
                 DateTime.Now
 
 
