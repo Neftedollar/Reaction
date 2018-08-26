@@ -1,6 +1,4 @@
-module Reaction.Query
-
-open Reaction
+namespace Reaction
 
 type QueryBuilder() =
     member this.Zero() = empty ()
@@ -13,5 +11,7 @@ type QueryBuilder() =
 
     member x.For(source:AsyncObservable<_>, func) = flatMap func source
 
-// Query builder for an async reactive event source
-let rx = new QueryBuilder()
+[<AutoOpen>]
+module Query =
+    // Query builder for an async reactive event source
+    let rx = new QueryBuilder()

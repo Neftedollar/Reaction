@@ -3,7 +3,6 @@ module Tests.Query
 open System.Threading.Tasks
 
 open Reaction
-open Reaction.Query
 
 open NUnit.Framework
 open FsUnit
@@ -15,7 +14,7 @@ let toTask computation : Task = Async.StartAsTask computation :> _
 [<Test>]
 let ``test empty query`` () = toTask <| async {
     // Arrange
-    let xs = reac {
+    let xs = rx {
         ()
     }
     let obv = TestObserver<unit>()
@@ -40,7 +39,7 @@ let ``test query let!`` () = toTask <| async {
     // Arrange
     let obv = TestObserver<int>()
 
-    let xs = reac {
+    let xs = rx {
         let! a = seq [1; 2] |> ofSeq
         let! b = seq [3; 4] |> ofSeq
 
