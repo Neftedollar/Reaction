@@ -14,4 +14,4 @@ type QueryBuilder() =
     member x.For(source:AsyncObservable<_>, func) = flatMap func source
 
 // Query builder for an async reactive event source
-let reac = new QueryBuilder()
+let rx = new QueryBuilder()
