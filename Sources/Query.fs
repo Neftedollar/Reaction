@@ -1,15 +1,15 @@
 namespace Reaction
 
 type QueryBuilder() =
-    member this.Zero() = empty ()
+    member this.Zero() : AsyncObservable<_> = empty ()
 
-    member this.YieldFrom (x) : AsyncObservable<_> = x
+    member this.YieldFrom (xs : AsyncObservable<'a>) : AsyncObservable<'a> = xs
 
-    member this.Yield (x : 'a) : AsyncObservable<_> = single x
+    member this.Yield (x : 'a) : AsyncObservable<'a> = single x
 
-    member this.Bind(source: AsyncObservable<'a>, fn: 'a -> AsyncObservable<'b>) = flatMap fn source
+    member this.Bind(source: AsyncObservable<'a>, fn: 'a -> AsyncObservable<'b>) : AsyncObservable<'b> = flatMap fn source
 
-    member x.For(source:AsyncObservable<_>, func) = flatMap func source
+    member x.For(source:AsyncObservable<_>, func) : AsyncObservable<'b> = flatMap func source
 
 [<AutoOpen>]
 module Query =
