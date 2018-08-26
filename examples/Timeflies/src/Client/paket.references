@@ -1,5 +1,0 @@
-group Client
-    FSharp.Core
-    Fable.Core
-    dotnet-fable
-    Fulma
