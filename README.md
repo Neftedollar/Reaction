@@ -4,6 +4,8 @@ Reaction is a lightweight Async Reactive ([Rx](http://reactivex.io/)) library fo
 
 Currently a playground project for experimenting with async reactive functional programming (Async Observables) in F#. The project is heavily inspired by [aioreactive](https://github.com/dbrattli/aioreactive).
 
+See [Fable Reaction](https://github.com/dbrattli/Fable.Reaction) Eor Elmish-ish use of Reaction.
+
 ## Async Observables
 
 The difference between an "Async Observable" and an "Observable" is that with "Async Observables" you need to await operations such as subscribe, OnNext, OnError, OnCompleted. This enables subscribe in create type operators to do async operations i.e setup network connections, and observers may finally do async operations such as writing to disk (observers are all about side-effects right?).
@@ -40,4 +42,3 @@ currently no plans to make this into a full featured Rx implementation.
 - combineLatest
 - withLatestFrom
 - switchLatest
-
