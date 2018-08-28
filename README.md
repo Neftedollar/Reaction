@@ -70,3 +70,4 @@ currently no plans to make this into a full featured Rx implementation.
 - combineLatest
 - withLatestFrom
 - switchLatest
+- catch

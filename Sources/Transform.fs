@@ -107,3 +107,32 @@ module Transform =
 
     let flatMapLatestAsync (mapper : 'a -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         source |> mapAsync mapper |> switchLatest
+
+
+    let catch (handler: exn -> AsyncObservable<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+        let subscribe (aobv : AsyncObserver<'a>) =
+            async {
+                let mutable disposable = disposableEmpty
+
+                let rec action (source: AsyncObservable<_>) = async {
+                    let _obv n = async {
+                        match n with
+                        | OnError ex ->
+                            let nextSource = handler ex
+                            do! action nextSource
+                        | _ -> do! aobv n
+                    }
+
+                    do! disposable ()
+                    let! subscription = source _obv
+                    disposable <- subscription
+                }
+                do! action source
+
+                let cancel () =
+                    async {
+                        do! disposable ()
+                    }
+                return cancel
+            }
+        subscribe

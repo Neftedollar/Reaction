@@ -2,6 +2,7 @@ namespace Reaction
 
 [<AutoOpen>]
 module AsyncObservable =
+    /// AsyncObservable as a single case union type to attach methods such as SubscribeAsync.
     type AsyncObservable<'a> = AsyncObservable of Types.AsyncObservable<'a> with
 
         /// Returns the wrapped subscribe function: AsyncObserver{'a} -> Async{AsyncDisposable}
@@ -141,3 +142,8 @@ module AsyncObservable =
     let stream<'a> () : AsyncObserver<'a> * AsyncObservable<'a> =
         let obv, obs = Streams.stream ()
         AsyncObserver obv, AsyncObservable obs
+
+    let catch (handler: exn -> AsyncObservable<'a>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+        AsyncObservable.Unwrap source
+            |> Transform.catch (mapperUnwrapped handler)
+            |> AsyncObservable

@@ -100,7 +100,6 @@ module Context =
             member this.Now =
                 DateTime.Now
 
-
         static member SleepAsync = ReactionContext.Current.SleepAsync
 
         static member Now = ReactionContext.Current.Now

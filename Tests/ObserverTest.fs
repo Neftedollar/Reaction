@@ -19,7 +19,7 @@ let ``Test safe observer empty sequence``() = toTask <| async {
     let safeObv = safeObserver obv.PostAsync
 
     // Act
-    let! dispose = xs safeObv
+    let! dispose = xs.SubscribeAsync safeObv
 
     // Assert
     let actual = obv.Notifications |> Seq.toList
@@ -39,7 +39,7 @@ let ``Test safe observer error sequence``() = toTask <| async {
     let safeObv = safeObserver obv.PostAsync
 
     // Act
-    let! dispose = xs safeObv
+    let! dispose = xs.SubscribeAsync safeObv
     try
         do! obv.AwaitIgnore ()
     with
@@ -78,7 +78,7 @@ let ``Test safe observer stops after completed``() = toTask <| async {
     let safeObv = safeObserver obv.PostAsync
 
     // Act
-    let! dispose = xs safeObv
+    let! dispose = xs.SubscribeAsync safeObv
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -96,7 +96,7 @@ let ``Test safe observer stops after completed completed``() = toTask <| async {
     let safeObv = safeObserver obv.PostAsync
 
     // Act
-    let! dispose = xs safeObv
+    let! dispose = xs.SubscribeAsync safeObv
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -115,7 +115,7 @@ let ``Test safe observer stops after error``() = toTask <| async {
     let safeObv = safeObserver obv.PostAsync
 
     // Act
-    let! dispose = xs safeObv
+    let! dispose = xs.SubscribeAsync safeObv
     try
         do! obv.AwaitIgnore ()
     with
@@ -137,7 +137,7 @@ let ``Test safe observer stops after error error``() = toTask <| async {
     let safeObv = safeObserver obv.PostAsync
 
     // Act
-    let! dispose = xs safeObv
+    let! dispose = xs.SubscribeAsync safeObv
     try
         do! obv.AwaitIgnore ()
     with
