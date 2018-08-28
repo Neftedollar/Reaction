@@ -33,8 +33,9 @@ module AsyncObservable =
         }
 
          // Concatenate two AsyncObservable streams
-        static member (+) (x:AsyncObservable<'a>, y:AsyncObservable<'a>) =
+        static member (+) (x: AsyncObservable<'a>, y: AsyncObservable<'a>) =
             Combine.concat [ AsyncObservable.Unwrap x; AsyncObservable.Unwrap y]
+            |> AsyncObservable
 
         // FlapMapAsync overload. Note cannot be used by Fable
         static member (>>=) (source:AsyncObservable<'a>, mapper:'a -> Async<AsyncObservable<'b>>) : AsyncObservable<'b> =
@@ -42,7 +43,9 @@ module AsyncObservable =
                 let! result = mapper p
                 return AsyncObservable.Unwrap result
             }
-            AsyncObservable.Unwrap source |> Transform.flatMapAsync mapperUnwrapped |> AsyncObservable
+            AsyncObservable.Unwrap source
+            |> Transform.flatMapAsync mapperUnwrapped
+            |> AsyncObservable
 
     let mapperUnwrapped (mapper : 'a -> AsyncObservable<'b>) a : Types.AsyncObservable<'b> =
             let result = mapper a

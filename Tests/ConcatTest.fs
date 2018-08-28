@@ -101,7 +101,7 @@ let ``Test concat +``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs obv.PostAsync
+    let! sub = zs.SubscribeAsync obv.PostAsync
     let! result = obv.Await ()
 
     // Assert
