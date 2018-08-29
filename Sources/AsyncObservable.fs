@@ -88,65 +88,82 @@ module AsyncObservable =
 
     let inline merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
-            |> Transform.map (fun xs -> AsyncObservable.Unwrap xs)
-            |> Combine.merge
-            |> AsyncObservable
+        |> Transform.map (fun xs -> AsyncObservable.Unwrap xs)
+        |> Combine.merge
+        |> AsyncObservable
 
     let inline concat (sources : seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
         Seq.map AsyncObservable.Unwrap sources
-            |> Combine.concat
-            |> AsyncObservable
+        |> Combine.concat
+        |> AsyncObservable
 
     let flatMap (mapper:'a -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         AsyncObservable.Unwrap source
-            |> Transform.flatMap (mapperUnwrapped mapper)
-            |> AsyncObservable
+        |> Transform.flatMap (mapperUnwrapped mapper)
+        |> AsyncObservable
 
     let flatMapi (mapper:'a*int -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         AsyncObservable.Unwrap source
-            |> Transform.flatMapi (mapperUnwrapped mapper)
-            |> AsyncObservable
+        |> Transform.flatMapi (mapperUnwrapped mapper)
+        |> AsyncObservable
 
     let flatMapAsync (mapper:'a -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         AsyncObservable.Unwrap source
-            |> Transform.flatMapAsync (mapperUnwrappedAsync mapper)
-            |> AsyncObservable
+        |> Transform.flatMapAsync (mapperUnwrappedAsync mapper)
+        |> AsyncObservable
 
     let flatMapiAsync (mapper:'a*int -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         AsyncObservable.Unwrap source
-            |> Transform.flatMapiAsync (mapperUnwrappedAsync mapper)
-            |> AsyncObservable
+        |> Transform.flatMapiAsync (mapperUnwrappedAsync mapper)
+        |> AsyncObservable
 
     let filter (predicate: 'a -> bool) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
-            |> Filter.filter predicate
-            |> AsyncObservable
+        |> Filter.filter predicate
+        |> AsyncObservable
 
     let filterAsync (predicate: 'a -> Async<bool>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
-            |> Filter.filterAsync predicate
-            |> AsyncObservable
+        |> Filter.filterAsync predicate
+        |> AsyncObservable
 
     let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
-            |> Filter.distinctUntilChanged
-            |> AsyncObservable
+        |> Filter.distinctUntilChanged
+        |> AsyncObservable
 
     let scan (initial : 's) (scanner:'s -> 'a -> 's) (source: AsyncObservable<'a>) : AsyncObservable<'s> =
         AsyncObservable.Unwrap source
-            |> Aggregate.scan initial scanner
-            |> AsyncObservable
+        |> Aggregate.scan initial scanner
+        |> AsyncObservable
 
     let scanAsync (initial : 's) (scanner:'s -> 'a -> Async<'s>) (source: AsyncObservable<'a>) : AsyncObservable<'s> =
         AsyncObservable.Unwrap source
-            |> Aggregate.scanAsync initial scanner
-            |> AsyncObservable
+        |> Aggregate.scanAsync initial scanner
+        |> AsyncObservable
 
     let stream<'a> () : AsyncObserver<'a> * AsyncObservable<'a> =
         let obv, obs = Streams.stream ()
         AsyncObserver obv, AsyncObservable obs
 
-    let catch (handler: exn -> AsyncObservable<'a>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+    let inline catch (handler: exn -> AsyncObservable<'a>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
-            |> Transform.catch (mapperUnwrapped handler)
-            |> AsyncObservable
+        |> Transform.catch (mapperUnwrapped handler)
+        |> AsyncObservable
+
+    let inline startWith (items : seq<'a>) (source : AsyncObservable<'a>) =
+        AsyncObservable.Unwrap source
+        |> Combine.startWith items
+        |> AsyncObservable
+
+    let inline combineLatest (other : AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+        AsyncObservable.Unwrap source
+        |> Combine.combineLatest (AsyncObservable.Unwrap other)
+        |> AsyncObservable
+
+    let inline withLatestFrom (other : AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+        AsyncObservable.Unwrap source
+        |> Combine.withLatestFrom (AsyncObservable.Unwrap other)
+        |> AsyncObservable
+
+
