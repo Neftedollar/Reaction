@@ -27,7 +27,7 @@ module Aggregate =
     let scan (initial : 's) (accumulator: 's -> 'a -> 's) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
         scanAsync initial (fun s x -> async { return accumulator s x } ) source
 
-    let groupBy (groupSelector: 'a -> 'g) (source : AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
+    let groupBy (keyMapper: 'a -> 'g) (source : AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
         let subscribe (aobv : AsyncObserver<AsyncObservable<'a>>) =
             let cancellationSource = new CancellationTokenSource()
             let agent = MailboxProcessor.Start((fun inbox ->
@@ -41,7 +41,7 @@ module Aggregate =
                         async {
                             match n with
                             | OnNext x ->
-                                let groupKey = groupSelector x
+                                let groupKey = keyMapper x
                                 let! newGroups = async {
                                     match groups.TryFind groupKey with
                                     | Some group ->
