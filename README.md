@@ -57,17 +57,31 @@ The following parameterized async observerable returning functions (operators) a
 currently supported. Other operators may be implemented on-demand, but there are
 currently no plans to make this into a full featured Rx implementation.
 
-- map, mapi, mapAsync, mapiAsync
-- filter, filterAsync
-- scan, scanAsync
-- merge
-- flatMap, flatMapi, flatMapAsync, flatMapiAsync
-- concat
-- startWith
-- distinctUntilChanged
-- delay
-- debounce
-- combineLatest
-- withLatestFrom
-- switchLatest
-- catch
+- [x] **empty** : () -> AsyncObservable<'a>
+- [x] **single** : 'a -> AsyncObservable<'a>
+- [x] **fail** : exn -> AsyncObservable<'a>
+- [x] **ofSeq** : seq< 'a> -> AsyncObservable<'a>
+- [x] **map** : ('a -> 'b) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- [x] **mapi** : ('a*int -> 'b) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- [x] **mapAsync** : ('a -> Async<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- [x] **mapiAsync** : ('a*int -> Async<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- [x] **filter** : ('a -> Async\<bool\>) -> AsyncObservable<'a> -> AsyncObservable<'a>
+- [x] **filterAsync** : ('a -> bool) -> AsyncObservable<'a> -> AsyncObservable<'a>
+- [x] **distinctUntilChanged** : AsyncObservable<'a> -> AsyncObservable<'a>
+- [x] **scan** : 's -> ('s -> 'a -> 's) -> AsyncObservable<'a> -> AsyncObservable<'s>
+- [x] **scanAsync** : 's -> ('s -> 'a -> Async<'s>) -> AsyncObservable<'a> -> AsyncObservable<'s>
+- [x] **merge** : AsyncObservable<AsyncObservable<'a>> -> AsyncObservable<'a>
+- [x] **switchLatest** : AsyncObservable<AsyncObservable<'a>> -> AsyncObservable<'a>
+- [x] **flatMap** : ('a -> AsyncObservable<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- [x] **flatMapi** : ('a*int -> AsyncObservable<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- [x] **flatMapAsync** : ('a -> Async<AsyncObservable<'b>>) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- [x] **flatMapiAsync** : ('a*int -> Async<AsyncObservable<'b>>) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- [x] **concat** : seq<AsyncObservable<'a>> -> AsyncObservable<'a>
+- [x] **startWith** : seq<'a> -> AsyncObservable<'a> -> AsyncObservable<'a>
+- [x] **delay** : int -> AsyncObservable<'a> -> AsyncObservable<'a>
+- [x] **debounce** : int -> AsyncObservable<'a> -> AsyncObservable<'a>
+- [x] **combineLatest** : AsyncObservable<'b> -> AsyncObservable<'a> -> AsyncObservable<'a*'b>
+- [x] **withLatestFrom** : AsyncObservable<'b> -> AsyncObservable<'a> -> AsyncObservable<'a*'b>
+- [x] **catch** : (exn -> AsyncObservable<'a>) -> AsyncObservable<'a> -> AsyncObservable<'a>
+- [x] **groupBy** : ('a -> 'g) -> AsyncObservable<'a> -> AsyncObservable<AsyncObservable<'a>>
+- [x] **zipSeq** : seq<'b> -> AsyncObservable<'a> -> AsyncObservable<'a*'b>

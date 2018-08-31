@@ -28,8 +28,7 @@ module AsyncObservable =
 
         /// Subscribes the observer function (Notification{'a} -> Async{unit}) to the AsyncObservable, ignores the disposable
         member this.RunAsync<'a> (obv: Notification<'a> -> Async<unit>) = async {
-            let! _ = obv |> AsyncObservable.Unwrap this
-            ()
+            do! obv |> AsyncObservable.Unwrap this |> Async.Ignore
         }
 
          // Concatenate two AsyncObservable streams
@@ -59,10 +58,10 @@ module AsyncObservable =
     let ofSeq (xs : seq<'a>) : AsyncObservable<'a> =
         AsyncObservable <| Creation.ofSeq xs
 
-    let empty () : AsyncObservable<'a> =
+    let empty<'a> () : AsyncObservable<'a> =
         AsyncObservable <| Creation.empty ()
 
-    let fail ex : AsyncObservable<'a> =
+    let fail<'a> ex : AsyncObservable<'a> =
         AsyncObservable <| Creation.fail ex
 
     let single (x : 'a) : AsyncObservable<'a> =
@@ -88,7 +87,7 @@ module AsyncObservable =
 
     let inline merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
-        |> Transform.map (fun xs -> AsyncObservable.Unwrap xs)
+        |> Transform.map AsyncObservable.Unwrap
         |> Combine.merge
         |> AsyncObservable
 
@@ -166,4 +165,8 @@ module AsyncObservable =
         |> Combine.withLatestFrom (AsyncObservable.Unwrap other)
         |> AsyncObservable
 
-
+    let groupBy (groupSelector: 'a -> 'g) (source : AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
+        AsyncObservable.Unwrap source
+        |> Aggregate.groupBy groupSelector
+        |> Transform.map AsyncObservable
+        |> AsyncObservable

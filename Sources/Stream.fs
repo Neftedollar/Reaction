@@ -1,17 +1,19 @@
 namespace Reaction
 
 open System.Collections.Generic
+open System.Threading
+
 open Types
 open Core
 
 module Streams =
-     // Hot stream that supports multiple subscribers
+    /// A hot stream that supports multiple subscribers
     let stream<'a> () : AsyncObserver<'a> * AsyncObservable<'a> =
         let obvs = new List<AsyncObserver<'a>>()
 
         let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
             let sobv = safeObserver aobv
-            obvs.Add(sobv)
+            obvs.Add sobv
 
             async {
                 let cancel () = async {
@@ -35,16 +37,18 @@ module Streams =
 
         obv, subscribe
 
-    // Cold stream that only supports a single subscriber
+    /// A cold stream that only supports a single subscriber
     let singleStream () : AsyncObserver<'a> * AsyncObservable<'a> =
         let mutable oobv : AsyncObserver<'a> option = None
+        let waitTokenSource = new CancellationTokenSource ()
 
         let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
             let sobv = safeObserver aobv
             if Option.isSome oobv then
-                failwith "Already subscribed"
+                failwith "singleStream: Already subscribed"
 
             oobv <- Some sobv
+            waitTokenSource.Cancel ()
 
             async {
                 let cancel () = async {
@@ -55,8 +59,9 @@ module Streams =
 
         let obv (n : Notification<'a>) =
             async {
-                while Option.isNone oobv do
-                    do! Async.Sleep 100  // Works with Fable
+                while oobv.IsNone do
+                    // Wait for subscriber
+                    Async.StartImmediate (Async.Sleep 100, waitTokenSource.Token)
 
                 match oobv with
                 | Some obv ->
@@ -69,6 +74,7 @@ module Streams =
                     | OnError e -> do! OnError e |> obv
                     | OnCompleted -> do! obv OnCompleted
                 | None ->
+                    printfn "No observer for %A" n
                     ()
             }
 
