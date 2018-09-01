@@ -4,6 +4,26 @@ open Types
 open Core
 
 module Filter =
+    let choose (chooser: 'a -> 'b option) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        let subscribe (obvAsync : Types.AsyncObserver<'b>) =
+            async {
+                let _obv n =
+                    async {
+                        match n with
+                        | OnNext x ->
+                            // Let exceptions bubble to the top
+                            match chooser x with
+                            | Some b ->
+                                do! OnNext b |> obvAsync
+                            | None -> ()
+                        | OnError ex -> do! OnError ex |> obvAsync
+                        | OnCompleted -> do! OnCompleted |> obvAsync
+
+                    }
+                return! _obv |>source
+            }
+        subscribe
+
     // The classic filter (where) operator with async predicate
     let filterAsync (predicate : 'a -> Async<bool>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =

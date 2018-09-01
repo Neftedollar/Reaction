@@ -5,7 +5,7 @@ module AsyncObservable =
     /// AsyncObservable as a single case union type to attach methods such as SubscribeAsync.
     type AsyncObservable<'a> = AsyncObservable of Types.AsyncObservable<'a> with
 
-        /// Returns the wrapped subscribe function: AsyncObserver{'a} -> Async{AsyncDisposable}
+        /// Returns the wrapped subscribe function (`AsyncObserver{'a} -> Async{AsyncDisposable}`)
         static member Unwrap (AsyncObservable obs) : Types.AsyncObservable<'a> = obs
 
         /// Subscribes the async observer to the async observable
@@ -21,13 +21,14 @@ module AsyncObservable =
             return ()
         }
 
-        /// Subscribes the observer function (Notification{'a} -> Async{unit}) to the AsyncObservable
+        /// Subscribes the observer function (`Notification{'a} -> Async{unit}`) to the AsyncObservable
         member this.SubscribeAsync<'a> (obv: Notification<'a> -> Async<unit>) = async{
             let! disposable = obv |> AsyncObservable.Unwrap this
             return AsyncDisposable disposable
         }
 
-        /// Subscribes the observer function (Notification{'a} -> Async{unit}) to the AsyncObservable, ignores the disposable
+        /// Subscribes the observer function (`Notification{'a} -> Async{unit}`)
+        /// to the AsyncObservable, ignores the disposable.
         member this.RunAsync<'a> (obv: Notification<'a> -> Async<unit>) = async {
             do! obv |> AsyncObservable.Unwrap this |> Async.Ignore
         }
@@ -78,7 +79,7 @@ module AsyncObservable =
     let single (x : 'a) : AsyncObservable<'a> =
         AsyncObservable <| Creation.single x
 
-    /// Time shifts the observable sequence by the given timeotu. The
+    /// Time shifts the observable sequence by the given timeout. The
     /// relative time intervals between the values are preserved.
     let delay msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source |>  Timeshift.delay msecs |> AsyncObservable
@@ -109,6 +110,12 @@ module AsyncObservable =
     /// index on each element of the source.
     let mapiAsync (mapper:'a*int -> Async<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         AsyncObservable.Unwrap source |> Transform.mapiAsync mapper |> AsyncObservable
+
+    /// Applies the given function to each element of the stream and
+    /// returns the stream comprised of the results for each element
+    /// where the function returns Some with some value.
+    let choose (chooser: 'a -> 'b option) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        AsyncObservable.Unwrap source |> Filter.choose chooser |> AsyncObservable
 
     /// Merges an observable sequence of observable sequences into an
     /// observable sequence.
@@ -158,6 +165,27 @@ module AsyncObservable =
         AsyncObservable.Unwrap source
         |> Transform.flatMapiAsync (mapperUnwrappedAsync mapper)
         |> AsyncObservable
+
+    /// Transforms an observable sequence of observable sequences into
+    /// an observable sequence producing values only from the most
+    /// recent observable sequence.
+    let switchLatest (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+        AsyncObservable.Unwrap source
+        |> Transform.map AsyncObservable.Unwrap
+        |> Transform.switchLatest
+        |> AsyncObservable
+
+    /// Transforms the items emitted by an source sequence into
+    /// observable streams, and mirror those items emitted by the
+    /// most-recently transformed observable sequence.
+    let flatMapLatest (mapper : 'a -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> map mapper |> switchLatest
+
+    /// Asynchronosly transforms the items emitted by an source sequence
+    /// into observable streams, and mirror those items emitted by the
+    /// most-recently transformed observable sequence.
+    let flatMapLatestAsync (mapper : 'a -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        source |> mapAsync mapper |> switchLatest
 
     /// Filters the elements of an observable sequence based on a
     /// predicate. Returns an observable sequence that contains elements
