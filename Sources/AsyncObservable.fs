@@ -8,13 +8,14 @@ module AsyncObservable =
         /// Returns the wrapped subscribe function: AsyncObserver{'a} -> Async{AsyncDisposable}
         static member Unwrap (AsyncObservable obs) : Types.AsyncObservable<'a> = obs
 
-        /// Subscribes an AsyncObserver to the AsyncObservable
+        /// Subscribes the async observer to the async observable
         member this.SubscribeAsync obv = async {
             let! disposable = AsyncObserver.Unwrap obv |> AsyncObservable.Unwrap this
             return AsyncDisposable disposable
         }
 
-        /// Subscribes an AsyncObserver to the AsyncObservable, ignores the disposable
+        /// Subscribes the async observer to the async observable,
+        /// ignores the disposable
         member this.RunAsync obv = async {
             let! _ = AsyncObserver.Unwrap obv |> AsyncObservable.Unwrap this
             return ()
@@ -31,12 +32,15 @@ module AsyncObservable =
             do! obv |> AsyncObservable.Unwrap this |> Async.Ignore
         }
 
-         // Concatenate two AsyncObservable streams
+        /// Returns an observable sequence that contains the elements of
+        /// the two steams, in sequential order.
         static member (+) (x: AsyncObservable<'a>, y: AsyncObservable<'a>) =
             Combine.concat [ AsyncObservable.Unwrap x; AsyncObservable.Unwrap y]
             |> AsyncObservable
 
-        // FlapMapAsync overload.
+        /// Projects each element of an observable sequence into an
+        /// observable sequence and merges the resulting observable
+        /// sequences back into one observable sequence.
         static member (>>=) (source:AsyncObservable<'a>, mapper:'a -> Async<AsyncObservable<'b>>) : AsyncObservable<'b> =
             let mapperUnwrapped p : Async<Types.AsyncObservable<'b>> = async {
                 let! result = mapper p
