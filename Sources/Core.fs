@@ -31,7 +31,7 @@ module Core =
     /// Safe observer that wraps the given observer and makes sure that
     /// the Rx grammar (onNext* (onError|onCompleted)?) is not violated.
     let safeObserver (obv : AsyncObserver<'a>) =
-        let agent = MailboxProcessor.Start(fun inbox ->
+        let agent = MailboxProcessor.StartImmediate (fun inbox ->
             let rec messageLoop stopped = async {
                 let! n = inbox.Receive()
 
@@ -64,7 +64,7 @@ module Core =
         safeObv
 
     let refCountAgent initial action =
-        MailboxProcessor.Start(fun inbox ->
+        MailboxProcessor.StartImmediate(fun inbox ->
             let rec messageLoop count = async {
                 let! cmd = inbox.Receive ()
                 let newCount =

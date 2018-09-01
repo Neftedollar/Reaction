@@ -94,5 +94,5 @@ let ``Test groupby cancel``() = toTask <| async {
     do! sub.DisposeAsync ()
 
     // Assert
-    obv.Notifications.Count |> should be (lessThan 7)
+    obv.Notifications.Count |> should be (lessThan 8)
 }

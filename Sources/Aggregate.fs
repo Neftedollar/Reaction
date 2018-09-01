@@ -30,7 +30,7 @@ module Aggregate =
     let groupBy (keyMapper: 'a -> 'g) (source : AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
         let subscribe (aobv : AsyncObserver<AsyncObservable<'a>>) =
             let cancellationSource = new CancellationTokenSource()
-            let agent = MailboxProcessor.Start((fun inbox ->
+            let agent = MailboxProcessor.StartImmediate((fun inbox ->
                 let rec messageLoop ((groups, disposed) : Map<'g, AsyncObserver<'a>>*bool) = async {
                     let! n = inbox.Receive ()
 

@@ -18,13 +18,21 @@ let ``Test debounce single value``() = toTask <| async {
     let dispatch, obs = stream ()
     let xs = obs |> debounce 100
     let obv = TestObserver<int>()
+    let ctx = TestSynchronizationContext ()
+    let mutable latest = -1
 
     // Act
-    let! sub = xs.SubscribeAsync (obv.PostAsync)
-    do! dispatch.OnNextAsync 42
-    do! ReactionContext.SleepAsync 150
-    do! dispatch.OnCompletedAsync ()
-    let! latest= obv.Await ()
+    let task = async {
+        let! sub = xs.SubscribeAsync (obv.PostAsync)
+        do! dispatch.OnNextAsync 42
+        do! ReactionContext.SleepAsync 150
+        do! dispatch.OnCompletedAsync ()
+
+        let! latest' = obv.Await ()
+        latest <- latest'
+        ()
+    }
+    do! ctx.RunAsync task
 
     // Assert
     latest |> should equal 42
@@ -41,14 +49,22 @@ let ``Test debounce two immediate values``() = toTask <| async {
     let dispatch, obs = stream ()
     let xs = obs |> debounce 100
     let obv = TestObserver<int>()
+    let ctx = TestSynchronizationContext ()
+    let mutable latest = -1
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
-    do! dispatch.OnNextAsync 42
-    do! dispatch.OnNextAsync 43
-    do! ReactionContext.SleepAsync 150
-    do! dispatch.OnCompletedAsync ()
-    let! latest= obv.Await ()
+    let task = async {
+        let! sub = xs.SubscribeAsync obv.PostAsync
+        do! dispatch.OnNextAsync 42
+        do! dispatch.OnNextAsync 43
+        do! ReactionContext.SleepAsync 150
+        do! dispatch.OnCompletedAsync ()
+
+        let! latest' = obv.Await ()
+        latest <- latest'
+        ()
+    }
+    do! ctx.RunAsync task
 
     // Assert
     latest |> should equal 43
@@ -65,6 +81,7 @@ let ``Test debounce two separate values``() = toTask <| async {
     let xs = obs |> debounce 100
     let obv = TestObserver<int>()
     let ctx = TestSynchronizationContext ()
+    let mutable latest = -1
 
     let task = async {
         do! dispatch.OnNextAsync 42
@@ -73,16 +90,17 @@ let ``Test debounce two separate values``() = toTask <| async {
         do! ReactionContext.SleepAsync 150
         do! dispatch.OnCompletedAsync ()
 
-        let! latest = obv.Await ()
+        let! latest' = obv.Await ()
+        latest <- latest'
         ()
     }
 
     // Act
     let! sub = xs.SubscribeAsync obv.PostAsync
     do! ctx.RunAsync task
-    
+
     // Assert
-    //latest |> should equal 43
+    latest |> should equal 43
     obv.Notifications |> should haveCount 3
     let actual = obv.Notifications |> Seq.toList
     let expected : Notification<int> list = [ OnNext 42; OnNext 43; OnCompleted ]
