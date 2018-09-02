@@ -48,7 +48,7 @@ module Filter =
     let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
-            let agent = MailboxProcessor.StartImmediate(fun inbox ->
+            let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop (latest : Notification<'a>) = async {
                     let! n = inbox.Receive()
 

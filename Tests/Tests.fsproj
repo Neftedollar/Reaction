@@ -13,9 +13,9 @@
     <Compile Include="FilterTest.fs" />
     <Compile Include="MergeTest.fs" />
     <Compile Include="ConcatTest.fs" />
-    <Compile Include="DebounceTest.fs" />
     <Compile Include="CatchTest.fs" />
     <Compile Include="GroupByTest.fs" />
+    <Compile Include="BindTest.fs" />
     <Compile Include="QueryTest.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

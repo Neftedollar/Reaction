@@ -10,7 +10,7 @@ module Combine =
             let safeObserver = safeObserver aobv
 
             let innerAgent =
-                MailboxProcessor.StartImmediate(fun inbox ->
+                MailboxProcessor.Start(fun inbox ->
                     let rec messageLoop (innerSubscription : AsyncDisposable) = async {
                         let! cmd, replyChannel = inbox.Receive()
 
@@ -75,7 +75,7 @@ module Combine =
                         | _ -> do! safeObserver n
                     }
 
-                MailboxProcessor.StartImmediate(fun inbox ->
+                MailboxProcessor.Start(fun inbox ->
                     let rec messageLoop (innerSubscriptions : AsyncDisposable list) = async {
                         let! cmd = inbox.Receive()
                         let getInnerSubscriptions = async {
@@ -124,7 +124,7 @@ module Combine =
         let subscribe (aobv : AsyncObserver<'a*'b>) =
             let safeObserver = safeObserver aobv
 
-            let agent = MailboxProcessor.StartImmediate(fun inbox ->
+            let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop (source : option<'a>) (other : option<'b>) = async {
                     let! cn = inbox.Receive()
 
@@ -173,7 +173,7 @@ module Combine =
         let subscribe (aobv : AsyncObserver<'a*'b>) =
             let safeObserver = safeObserver aobv
 
-            let agent = MailboxProcessor.StartImmediate(fun inbox ->
+            let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop (latest : option<'b>) = async {
                     let! cn = inbox.Receive()
 

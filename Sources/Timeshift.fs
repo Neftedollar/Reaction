@@ -8,7 +8,7 @@ module Timeshift =
     // Delays each notification with the given number of milliseconds
     let delay (msecs : int) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
-            let agent = MailboxProcessor.StartImmediate(fun inbox ->
+            let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop state = async {
                     let! n, dueTime = inbox.Receive()
 
@@ -39,7 +39,7 @@ module Timeshift =
             let safeObserver = safeObserver aobv
             let infinite = Seq.initInfinite (fun index -> index)
 
-            let agent = MailboxProcessor.StartImmediate(fun inbox ->
+            let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop currentIndex = async {
                     let! n, index = inbox.Receive ()
 

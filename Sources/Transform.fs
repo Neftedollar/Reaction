@@ -37,7 +37,7 @@ module Transform =
                         | _ -> do! safeObserver n
                     }
 
-                MailboxProcessor.StartImmediate(fun inbox ->
+                MailboxProcessor.Start(fun inbox ->
                     let rec messageLoop (current : AsyncDisposable) = async {
                         let! cmd = inbox.Receive()
                         let getCurrent = async {
