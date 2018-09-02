@@ -22,31 +22,6 @@ module Transform =
             }
         subscribe
 
-    // The classic map (select) operator with sync mapper
-    let inline map (mapper : 'a -> 'b) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        mapAsync (fun x -> async { return mapper x }) source
-
-    // The classic map (select) operator with an indexed and async mapper
-    let mapiAsync (mapper : 'a*int -> Async<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> Combine.zipSeq infinite |> mapAsync mapper
-
-    // The classic map (select) operator with sync and indexed mapper
-    let inline mapi (mapper : 'a*int -> 'b) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        mapiAsync (fun (x, i) -> async { return mapper (x, i) }) source
-
-    // The classic flap map (selectMany, bind, mapMerge) operator
-    let flatMap (mapper : 'a -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> map mapper |> Combine.merge
-
-    let flatMapi (mapper : 'a*int -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapi mapper |> Combine.merge
-
-    let flatMapAsync (mapper : 'a -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapAsync mapper |> Combine.merge
-
-    let flatMapiAsync (mapper : 'a*int -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapiAsync mapper |> Combine.merge
-
     let switchLatest (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv

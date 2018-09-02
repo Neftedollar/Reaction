@@ -48,7 +48,8 @@ module AsyncObservable =
                 return AsyncObservable.Unwrap result
             }
             AsyncObservable.Unwrap source
-            |> Transform.flatMapAsync mapperUnwrapped
+            |> Transform.mapAsync mapperUnwrapped
+            |> Combine.mergeInner
             |> AsyncObservable
 
     let mapperUnwrapped (mapper : 'a -> AsyncObservable<'b>) a : Types.AsyncObservable<'b> =
@@ -89,10 +90,11 @@ module AsyncObservable =
     let debounce msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source |>  Timeshift.debounce msecs |> AsyncObservable
 
-    /// Returns an observable sequence whose elements are the result of
-    /// invoking the mapper function on each element of the source.
-    let map (mapper:'a -> 'b) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source |> Transform.map mapper |> AsyncObservable
+    let zipSeq (sequence : seq<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+        source
+        |> AsyncObservable.Unwrap
+        |> Combine.zipSeq sequence
+        |> AsyncObservable
 
     /// Returns an observable sequence whose elements are the result of
     /// invoking the async mapper function on each element of the source.
@@ -100,16 +102,21 @@ module AsyncObservable =
         AsyncObservable.Unwrap source |> Transform.mapAsync mapper |> AsyncObservable
 
     /// Returns an observable sequence whose elements are the result of
-    /// invoking the mapper function and incorporating the element's
-    /// index on each element of the source.
-    let mapi (mapper:'a*int -> 'b) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source |> Transform.mapi mapper |> AsyncObservable
+    /// invoking the mapper function on each element of the source.
+    let map (mapper:'a -> 'b) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
+        mapAsync (fun x -> async { return mapper x }) source
 
     /// Returns an observable sequence whose elements are the result of
     /// invoking the async mapper function by incorporating the element's
     /// index on each element of the source.
     let mapiAsync (mapper:'a*int -> Async<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source |> Transform.mapiAsync mapper |> AsyncObservable
+        source |> zipSeq Core.infinite |> mapAsync mapper
+
+    /// Returns an observable sequence whose elements are the result of
+    /// invoking the mapper function and incorporating the element's
+    /// index on each element of the source.
+    let mapi (mapper:'a*int -> 'b) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
+        mapiAsync (fun (x, i) -> async { return mapper (x, i) }) source
 
     /// Applies the given function to each element of the stream and
     /// returns the stream comprised of the results for each element
@@ -119,11 +126,16 @@ module AsyncObservable =
 
     /// Merges an observable sequence of observable sequences into an
     /// observable sequence.
-    let inline merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
-        AsyncObservable.Unwrap source
-        |> Transform.map AsyncObservable.Unwrap
-        |> Combine.merge
+    let inline mergeInner (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+        source
+        |> map AsyncObservable.Unwrap
+        |> AsyncObservable.Unwrap
+        |> Combine.mergeInner
         |> AsyncObservable
+
+    /// Merges an observable sequence with another observable sequences.
+    let inline merge (other : AsyncObservable<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+        ofSeq [source; other] |> mergeInner
 
     /// Returns an observable sequence that contains the elements of each given
     /// sequences, in sequential order.
@@ -136,42 +148,35 @@ module AsyncObservable =
     /// observable sequence and merges the resulting observable
     /// sequences back into one observable sequence.
     let flatMap (mapper:'a -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source
-        |> Transform.flatMap (mapperUnwrapped mapper)
-        |> AsyncObservable
+        source |> map mapper |> mergeInner
 
     /// Projects each element of an observable sequence into an
     /// observable sequence by incorporating the element's
     /// index on each element of the source. Merges the resulting
     /// observable sequences back into one observable sequence.
     let flatMapi (mapper:'a*int -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source
-        |> Transform.flatMapi (mapperUnwrapped mapper)
-        |> AsyncObservable
+        source |> mapi mapper |> mergeInner
 
     /// Asynchronously projects each element of an observable sequence
     /// into an observable sequence and merges the resulting observable
     /// sequences back into one observable sequence.
     let flatMapAsync (mapper:'a -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source
-        |> Transform.flatMapAsync (mapperUnwrappedAsync mapper)
-        |> AsyncObservable
+        source |> mapAsync mapper |> mergeInner
 
     /// Asynchronously projects each element of an observable sequence
     /// into an observable sequence by incorporating the element's
     /// index on each element of the source. Merges the resulting
     /// observable sequences back into one observable sequence.
     let flatMapiAsync (mapper:'a*int -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source
-        |> Transform.flatMapiAsync (mapperUnwrappedAsync mapper)
-        |> AsyncObservable
+        source |> mapiAsync mapper |> mergeInner
 
     /// Transforms an observable sequence of observable sequences into
     /// an observable sequence producing values only from the most
     /// recent observable sequence.
     let switchLatest (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
-        AsyncObservable.Unwrap source
-        |> Transform.map AsyncObservable.Unwrap
+        source
+        |> map AsyncObservable.Unwrap
+        |> AsyncObservable.Unwrap
         |> Transform.switchLatest
         |> AsyncObservable
 
@@ -272,5 +277,6 @@ module AsyncObservable =
     let groupBy (keyMapper: 'a -> 'g) (source : AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
         AsyncObservable.Unwrap source
         |> Aggregate.groupBy keyMapper
-        |> Transform.map AsyncObservable
         |> AsyncObservable
+        |> map AsyncObservable
+
