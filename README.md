@@ -70,7 +70,8 @@ currently no plans to make this into a full featured Rx implementation.
 - **distinctUntilChanged** : AsyncObservable<'a> -> AsyncObservable<'a>
 - **scan** : 's -> ('s -> 'a -> 's) -> AsyncObservable<'a> -> AsyncObservable<'s>
 - **scanAsync** : 's -> ('s -> 'a -> Async<'s>) -> AsyncObservable<'a> -> AsyncObservable<'s>
-- **merge** : AsyncObservable<AsyncObservable<'a>> -> AsyncObservable<'a>
+- **merge** : AsyncObservable<'a> -> AsyncObservable<'a> -> AsyncObservable<'a>
+- **mergeInner** : AsyncObservable<AsyncObservable<'a>> -> AsyncObservable<'a>
 - **switchLatest** : AsyncObservable<AsyncObservable<'a>> -> AsyncObservable<'a>
 - **flatMap** : ('a -> AsyncObservable<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
 - **flatMapi** : ('a*int -> AsyncObservable<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>

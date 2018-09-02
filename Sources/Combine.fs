@@ -60,7 +60,7 @@ module Combine =
         concat [Creation.ofSeq items; source]
 
     // Merges an async observable of async observables
-    let merge (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+    let mergeInner (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let refCount = refCountAgent 1 (async {

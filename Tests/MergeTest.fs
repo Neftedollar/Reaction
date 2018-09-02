@@ -17,7 +17,7 @@ let ``Test merge non empty emtpy``() = toTask <| async {
     // Arrange
     let xs = ofSeq <| seq { 1..5 }
     let ys : AsyncObservable<int> = empty ()
-    let zs = ofSeq <| [ xs; ys ] |> merge
+    let zs = ofSeq <| [ xs; ys ] |> mergeInner
     let obv = TestObserver<int>()
 
     // Act
@@ -37,7 +37,7 @@ let ``Test merge empty non emtpy``() = toTask <| async {
     // Arrange
     let xs : AsyncObservable<int> = empty ()
     let ys = ofSeq <| seq { 1..5 }
-    let zs = ofSeq <| [ xs; ys ] |> merge
+    let zs = ofSeq <| [ xs; ys ] |> mergeInner
     let obv = TestObserver<int>()
 
     // Act
@@ -58,7 +58,7 @@ let ``Test merge error error``() = toTask <| async {
     let error = MyError "error"
     let xs = fail error
     let ys = fail error
-    let zs = ofSeq <| [ xs; ys ] |> merge
+    let zs = ofSeq <| [ xs; ys ] |> mergeInner
     let obv = TestObserver<int>()
 
     // Act
@@ -81,7 +81,7 @@ let ``Test merge two``() = toTask <| async {
     // Arrange
     let xs  = ofSeq <| seq { 1..3 }
     let ys = ofSeq <| seq { 4..5 }
-    let zs = ofSeq <| [ xs; ys ] |> merge
+    let zs = ofSeq <| [ xs; ys ] |> mergeInner
     let obv = TestObserver<int>()
 
     // Act
