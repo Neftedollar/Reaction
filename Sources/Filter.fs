@@ -41,10 +41,6 @@ module Filter =
             }
         subscribe
 
-    // The classic filter (where) operator with sync predicate
-    let inline filter (predicate : 'a -> bool) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
-        filterAsync (fun x -> async { return predicate x }) source
-
     let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv

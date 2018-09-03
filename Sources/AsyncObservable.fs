@@ -192,14 +192,6 @@ module AsyncObservable =
     let flatMapLatestAsync (mapper : 'a -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         source |> mapAsync mapper |> switchLatest
 
-    /// Filters the elements of an observable sequence based on a
-    /// predicate. Returns an observable sequence that contains elements
-    /// from the input sequence that satisfy the condition.
-    let filter (predicate: 'a -> bool) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
-        AsyncObservable.Unwrap source
-        |> Filter.filter predicate
-        |> AsyncObservable
-
     /// Filters the elements of an observable sequence based on an async
     /// predicate. Returns an observable sequence that contains elements
     /// from the input sequence that satisfy the condition.
@@ -208,20 +200,17 @@ module AsyncObservable =
         |> Filter.filterAsync predicate
         |> AsyncObservable
 
+    /// Filters the elements of an observable sequence based on a
+    /// predicate. Returns an observable sequence that contains elements
+    /// from the input sequence that satisfy the condition.
+    let filter (predicate: 'a -> bool) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+        filterAsync (fun x -> async { return predicate x }) source
+
     /// Return an observable sequence only containing the distinct
     /// contiguous elementsfrom the source sequence.
     let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
         |> Filter.distinctUntilChanged
-        |> AsyncObservable
-
-    /// Applies an accumulator function over an observable sequence and
-    /// returns each intermediate result. The seed value is used as the
-    /// initial accumulator value. Returns an observable sequence
-    /// containing the accumulated values.
-    let scan (initial : 's) (scanner:'s -> 'a -> 's) (source: AsyncObservable<'a>) : AsyncObservable<'s> =
-        AsyncObservable.Unwrap source
-        |> Aggregate.scan initial scanner
         |> AsyncObservable
 
     /// Applies an async accumulator function over an observable
@@ -232,6 +221,13 @@ module AsyncObservable =
         AsyncObservable.Unwrap source
         |> Aggregate.scanAsync initial scanner
         |> AsyncObservable
+
+    /// Applies an accumulator function over an observable sequence and
+    /// returns each intermediate result. The seed value is used as the
+    /// initial accumulator value. Returns an observable sequence
+    /// containing the accumulated values.
+    let scan (initial : 's) (scanner:'s -> 'a -> 's) (source: AsyncObservable<'a>) : AsyncObservable<'s> =
+        scanAsync initial (fun s x -> async { return scanner s x } ) source
 
     /// A stream is both an observable sequence as well as an observer.
     /// Each notification is broadcasted to all subscribed observers.
@@ -250,9 +246,7 @@ module AsyncObservable =
     /// Prepends a sequence of values to an observable sequence.
     /// Returns the source sequence prepended with the specified values.
     let inline startWith (items : seq<'a>) (source : AsyncObservable<'a>) =
-        AsyncObservable.Unwrap source
-        |> Combine.startWith items
-        |> AsyncObservable
+        concat [ofSeq items; source]
 
     /// Merges the specified observable sequences into one observable
     /// sequence by combining elements of the sources into tuples.

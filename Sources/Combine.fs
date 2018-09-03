@@ -56,9 +56,6 @@ module Combine =
             }
         subscribe
 
-    let startWith (items : seq<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
-        concat [Creation.ofSeq items; source]
-
     // Merges an async observable of async observables
     let mergeInner (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =

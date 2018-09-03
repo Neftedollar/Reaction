@@ -24,9 +24,6 @@ module Aggregate =
             }
         subscribe
 
-    let scan (initial : 's) (accumulator: 's -> 'a -> 's) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
-        scanAsync initial (fun s x -> async { return accumulator s x } ) source
-
     let groupBy (keyMapper: 'a -> 'g) (source : AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
         let subscribe (aobv : AsyncObserver<AsyncObservable<'a>>) =
             let cancellationSource = new CancellationTokenSource()
