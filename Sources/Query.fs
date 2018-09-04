@@ -14,4 +14,5 @@ type QueryBuilder() =
 [<AutoOpen>]
 module Query =
     // Query builder for an async reactive event source
-    let rx = new QueryBuilder()
+    let reaction = new QueryBuilder()
+    let rx = reaction // Shorter alias
