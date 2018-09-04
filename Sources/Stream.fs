@@ -79,3 +79,33 @@ module Streams =
             }
 
         obv, subscribe
+
+    let mbStream<'a> () : MailboxProcessor<'a>*AsyncObservable<'a> =
+        let obvs = new List<AsyncObserver<'a>>()
+
+        let mb = MailboxProcessor.Start(fun inbox ->
+            let rec messageLoop _ = async {
+                let! msg = inbox.Receive ()
+
+                for aobv in obvs do
+                    try
+                        do! OnNext msg |> aobv
+                    with ex ->
+                        do! OnError ex |> aobv
+                return! messageLoop ()
+            }
+            messageLoop ()
+        )
+
+        let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
+            let sobv = safeObserver aobv
+            obvs.Add sobv
+
+            async {
+                let cancel () = async {
+                    obvs.Remove sobv |> ignore
+                }
+                return cancel
+            }
+
+        mb, subscribe

@@ -8,6 +8,8 @@ module AsyncObservable =
         /// Returns the wrapped subscribe function (`AsyncObserver{'a} -> Async{AsyncDisposable}`)
         static member Unwrap (AsyncObservable obs) : Types.AsyncObservable<'a> = obs
 
+        static member Wrap (AsyncObservable obs) : Types.AsyncObservable<'a> = obs
+
         /// Subscribes the async observer to the async observable
         member this.SubscribeAsync obv = async {
             let! disposable = AsyncObserver.Unwrap obv |> AsyncObservable.Unwrap this
@@ -53,8 +55,8 @@ module AsyncObservable =
             |> AsyncObservable
 
     let mapperUnwrapped (mapper : 'a -> AsyncObservable<'b>) a : Types.AsyncObservable<'b> =
-            let result = mapper a
-            AsyncObservable.Unwrap result
+        let result = mapper a
+        AsyncObservable.Unwrap result
 
     let mapperUnwrappedAsync mapper a : Async<Types.AsyncObservable<'b>> = async {
         let! result = mapper a
@@ -83,12 +85,16 @@ module AsyncObservable =
     /// Time shifts the observable sequence by the given timeout. The
     /// relative time intervals between the values are preserved.
     let delay msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =
-        AsyncObservable.Unwrap source |>  Timeshift.delay msecs |> AsyncObservable
+        AsyncObservable.Unwrap source
+        |> Timeshift.delay msecs
+        |> AsyncObservable
 
     /// Ignores values from an observable sequence which are followed by
     /// another value before the given timeout.
     let debounce msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =
-        AsyncObservable.Unwrap source |>  Timeshift.debounce msecs |> AsyncObservable
+        AsyncObservable.Unwrap source
+        |> Timeshift.debounce msecs
+        |> AsyncObservable
 
     let zipSeq (sequence : seq<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
         source
@@ -99,7 +105,9 @@ module AsyncObservable =
     /// Returns an observable sequence whose elements are the result of
     /// invoking the async mapper function on each element of the source.
     let mapAsync (mapper:'a -> Async<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source |> Transform.mapAsync mapper |> AsyncObservable
+        AsyncObservable.Unwrap source
+        |> Transform.mapAsync mapper
+        |> AsyncObservable
 
     /// Returns an observable sequence whose elements are the result of
     /// invoking the mapper function on each element of the source.
@@ -110,7 +118,9 @@ module AsyncObservable =
     /// invoking the async mapper function by incorporating the element's
     /// index on each element of the source.
     let mapiAsync (mapper:'a*int -> Async<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> zipSeq Core.infinite |> mapAsync mapper
+        source
+        |> zipSeq Core.infinite
+        |> mapAsync mapper
 
     /// Returns an observable sequence whose elements are the result of
     /// invoking the mapper function and incorporating the element's
@@ -122,7 +132,9 @@ module AsyncObservable =
     /// returns the stream comprised of the results for each element
     /// where the function returns Some with some value.
     let choose (chooser: 'a -> 'b option) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source |> Filter.choose chooser |> AsyncObservable
+        AsyncObservable.Unwrap source
+        |> Filter.choose chooser
+        |> AsyncObservable
 
     /// Merges an observable sequence of observable sequences into an
     /// observable sequence.
@@ -148,27 +160,35 @@ module AsyncObservable =
     /// observable sequence and merges the resulting observable
     /// sequences back into one observable sequence.
     let flatMap (mapper:'a -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> map mapper |> mergeInner
+        source
+        |> map mapper
+        |> mergeInner
 
     /// Projects each element of an observable sequence into an
     /// observable sequence by incorporating the element's
     /// index on each element of the source. Merges the resulting
     /// observable sequences back into one observable sequence.
     let flatMapi (mapper:'a*int -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapi mapper |> mergeInner
+        source
+        |> mapi mapper
+        |> mergeInner
 
     /// Asynchronously projects each element of an observable sequence
     /// into an observable sequence and merges the resulting observable
     /// sequences back into one observable sequence.
     let flatMapAsync (mapper:'a -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapAsync mapper |> mergeInner
+        source
+        |> mapAsync mapper
+        |> mergeInner
 
     /// Asynchronously projects each element of an observable sequence
     /// into an observable sequence by incorporating the element's
     /// index on each element of the source. Merges the resulting
     /// observable sequences back into one observable sequence.
     let flatMapiAsync (mapper:'a*int -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapiAsync mapper |> mergeInner
+        source
+        |> mapiAsync mapper
+        |> mergeInner
 
     /// Transforms an observable sequence of observable sequences into
     /// an observable sequence producing values only from the most
@@ -184,13 +204,17 @@ module AsyncObservable =
     /// observable streams, and mirror those items emitted by the
     /// most-recently transformed observable sequence.
     let flatMapLatest (mapper : 'a -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> map mapper |> switchLatest
+        source
+        |> map mapper
+        |> switchLatest
 
     /// Asynchronosly transforms the items emitted by an source sequence
     /// into observable streams, and mirror those items emitted by the
     /// most-recently transformed observable sequence.
     let flatMapLatestAsync (mapper : 'a -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        source |> mapAsync mapper |> switchLatest
+        source
+        |> mapAsync mapper
+        |> switchLatest
 
     /// Filters the elements of an observable sequence based on an async
     /// predicate. Returns an observable sequence that contains elements
@@ -234,6 +258,12 @@ module AsyncObservable =
     let stream<'a> () : AsyncObserver<'a> * AsyncObservable<'a> =
         let obv, obs = Streams.stream ()
         AsyncObserver obv, AsyncObservable obs
+
+    /// A mailbox stream is a subscribable mailbox. Each message is
+    /// broadcasted to all subscribed observers.
+    let mbStream<'a> () : MailboxProcessor<'a> * AsyncObservable<'a> =
+        let mb, obs = Streams.mbStream ()
+        mb, AsyncObservable obs
 
     /// Returns an observable sequence containing the first sequence's
     /// elements, followed by the elements of the handler sequence in
