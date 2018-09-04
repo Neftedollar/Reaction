@@ -65,8 +65,8 @@ currently no plans to make this into a full featured Rx implementation.
 - **mapi** : ('a*int -> 'b) -> AsyncObservable<'a> -> AsyncObservable<'b>
 - **mapAsync** : ('a -> Async<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
 - **mapiAsync** : ('a*int -> Async<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **filter** : ('a -> Async\<bool\>) -> AsyncObservable<'a> -> AsyncObservable<'a>
-- **filterAsync** : ('a -> bool) -> AsyncObservable<'a> -> AsyncObservable<'a>
+- **filter** : ('a -> bool) -> AsyncObservable<'a> -> AsyncObservable<'a>
+- **filterAsync** : ('a -> Async\<bool\>) -> AsyncObservable<'a> -> AsyncObservable<'a>
 - **distinctUntilChanged** : AsyncObservable<'a> -> AsyncObservable<'a>
 - **scan** : 's -> ('s -> 'a -> 's) -> AsyncObservable<'a> -> AsyncObservable<'s>
 - **scanAsync** : 's -> ('s -> 'a -> Async<'s>) -> AsyncObservable<'a> -> AsyncObservable<'s>
