@@ -89,3 +89,4 @@ currently no plans to make this into a full featured Rx implementation.
 - **groupBy** : ('a -> 'g) -> AsyncObservable<'a> -> AsyncObservable<AsyncObservable<'a>>
 - **zipSeq** : seq<'b> -> AsyncObservable<'a> -> AsyncObservable<'a*'b>
 - **choose** : ('a -> 'b option) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- **chooseAsync** : ('a -> Async<'b option>) -> AsyncObservable<'a> -> AsyncObservable<'b>

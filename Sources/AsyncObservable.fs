@@ -8,8 +8,6 @@ module AsyncObservable =
         /// Returns the wrapped subscribe function (`AsyncObserver{'a} -> Async{AsyncDisposable}`)
         static member Unwrap (AsyncObservable obs) : Types.AsyncObservable<'a> = obs
 
-        static member Wrap (AsyncObservable obs) : Types.AsyncObservable<'a> = obs
-
         /// Subscribes the async observer to the async observable
         member this.SubscribeAsync obv = async {
             let! disposable = AsyncObserver.Unwrap obv |> AsyncObservable.Unwrap this
@@ -128,13 +126,19 @@ module AsyncObservable =
     let mapi (mapper:'a*int -> 'b) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         mapiAsync (fun (x, i) -> async { return mapper (x, i) }) source
 
+    // Applies the given async function to each element of the stream and
+    /// returns the stream comprised of the results for each element
+    /// where the function returns Some with some value.
+    let chooseAsync (chooser: 'a -> Async<'b option>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+        AsyncObservable.Unwrap source
+        |> Filter.chooseAsync chooser
+        |> AsyncObservable
+
     /// Applies the given function to each element of the stream and
     /// returns the stream comprised of the results for each element
     /// where the function returns Some with some value.
     let choose (chooser: 'a -> 'b option) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
-        AsyncObservable.Unwrap source
-        |> Filter.choose chooser
-        |> AsyncObservable
+        chooseAsync  (fun x -> async { return chooser x }) source
 
     /// Merges an observable sequence of observable sequences into an
     /// observable sequence.

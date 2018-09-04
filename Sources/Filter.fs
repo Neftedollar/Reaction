@@ -4,7 +4,7 @@ open Types
 open Core
 
 module Filter =
-    let choose (chooser: 'a -> 'b option) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let chooseAsync (chooser: 'a -> Async<'b option>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
         let subscribe (obvAsync : Types.AsyncObserver<'b>) =
             async {
                 let _obv n =
@@ -12,7 +12,7 @@ module Filter =
                         match n with
                         | OnNext x ->
                             // Let exceptions bubble to the top
-                            match chooser x with
+                            match! chooser x with
                             | Some b ->
                                 do! OnNext b |> obvAsync
                             | None -> ()
@@ -24,22 +24,14 @@ module Filter =
             }
         subscribe
 
-    // The classic filter (where) operator with async predicate
+    // The classic filter (where) operator with an async predicate
     let filterAsync (predicate : 'a -> Async<bool>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) =
-            async {
-                let obv n =
-                    async {
-                        match n with
-                        | OnNext x ->
-                            let! result = predicate x
-                            if result then
-                                do! x |> OnNext |> aobv  // Let exceptions bubble to the top
-                        | _ -> do! aobv n
-                    }
-                return! source obv
-            }
-        subscribe
+        let predicate' a = async {
+            match! predicate a with
+            | true -> return Some a
+            | _ -> return None
+        }
+        chooseAsync predicate' source
 
     let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
